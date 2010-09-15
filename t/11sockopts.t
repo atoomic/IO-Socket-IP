@@ -15,7 +15,7 @@ $sock = IO::Socket::IP->new(
    ReuseAddr => 1,
 ) or die "Cannot socket() - $!";
 
-is( $sock->getsockopt( SOL_SOCKET, SO_REUSEADDR ), 1, 'SO_REUSEADDR set' );
+ok( $sock->getsockopt( SOL_SOCKET, SO_REUSEADDR ), 'SO_REUSEADDR set' );
 
 SKIP: {
    # Some OSes don't implement SO_REUSEPORT
@@ -27,7 +27,7 @@ SKIP: {
       ReusePort => 1,
    ) or die "Cannot socket() - $!";
 
-   is( $sock->getsockopt( SOL_SOCKET, SO_REUSEPORT ), 1, 'SO_REUSEPORT set' );
+   ok( $sock->getsockopt( SOL_SOCKET, SO_REUSEPORT ), 'SO_REUSEPORT set' );
 }
 
 $sock = IO::Socket::IP->new(
@@ -36,4 +36,4 @@ $sock = IO::Socket::IP->new(
    Broadcast => 1,
 ) or die "Cannot socket() - $!";
 
-is( $sock->getsockopt( SOL_SOCKET, SO_BROADCAST ), 1, 'SO_BROADCAST set' );
+ok( $sock->getsockopt( SOL_SOCKET, SO_BROADCAST ), 'SO_BROADCAST set' );

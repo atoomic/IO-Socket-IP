@@ -1,4 +1,8 @@
 Revision history for IO-Socket-IP
 
+0.02    BUGFIXES:
+         * Not all OSes return true sockopts as 1; test simply for non-zero
+         * Gracefully skip IPv6 tests if Socket6 unavailable
+
 0.01    First version, released on an unsuspecting world.
 

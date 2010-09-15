@@ -9,12 +9,12 @@ use Test::More;
 
 eval { require IO::Socket::INET6 } or
    plan skip_all => "No INET6";
+eval { require Socket6 } or
+   plan skip_all => "No Socket6";
 
 plan tests => 12;
 
 use IO::Socket::IP;
-
-use Socket6 qw( unpack_sockaddr_in6 );
 
 foreach my $proto (qw( tcp udp )) {
    my $testserver = IO::Socket::INET6->new(
@@ -39,12 +39,12 @@ foreach my $proto (qw( tcp udp )) {
 
    ok( defined $testclient, "accepted test $proto client" );
 
-   is_deeply( [ unpack_sockaddr_in6 $socket->sockname ],
-              [ unpack_sockaddr_in6 $testclient->peername ],
+   is_deeply( [ Socket6::unpack_sockaddr_in6( $socket->sockname ) ],
+              [ Socket6::unpack_sockaddr_in6( $testclient->peername ) ],
               "\$socket->sockname for $proto" );
 
-   is_deeply( [ unpack_sockaddr_in6 $socket->peername ],
-              [ unpack_sockaddr_in6 $testclient->sockname ],
+   is_deeply( [ Socket6::unpack_sockaddr_in6( $socket->peername ) ],
+              [ Socket6::unpack_sockaddr_in6( $testclient->sockname ) ],
               "\$socket->peername for $proto" );
 
    is( $socket->peeraddr, "::1",                 "\$socket->peeraddr for $proto" );
