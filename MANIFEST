@@ -1,0 +1,15 @@
+Build.PL
+Changes
+lib/IO/Socket/IP.pm
+MANIFEST			This list of files
+t/00use.t
+t/01local-client-v4.t
+t/02local-server-v4.t
+t/03local-client-v6.t
+t/04local-server-v6.t
+t/11sockopts.t
+t/99pod.t
+Makefile.PL
+README
+LICENSE
+META.yml

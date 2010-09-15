@@ -1,0 +1,141 @@
+NAME
+    "IO::Socket::IP" - Use IPv4 and IPv6 sockets in a protocol-independent
+    way
+
+SYNOPSIS
+     use IO::Socket::IP;
+
+     my $sock = IO::Socket::IP->new(
+        PeerHost    => "www.google.com",
+        PeerService => "www",
+     );
+
+     printf "Now connected to %s:%s\n", $sock->peerhost_service;
+
+     ...
+
+DESCRIPTION
+    This module provides a protocol-independent way to use IPv4 and IPv6
+    sockets. It allows new connections to be made by specifying the hostname
+    and service name or port number. It allows for connections to be
+    accepted by sockets listening on local ports, by service name or port
+    number.
+
+    It uses Socket::GetAddrInfo's "getaddrinfo" function to convert
+    hostname/service name pairs into sets of possible addresses to connect
+    to. This allows it to work for IPv6 where the system supports it, while
+    still falling back to IPv4-only on systems which don't.
+
+    It provides an API which, for most typical cases, should be a drop-in
+    replacement for IO::Socket::INET; most constructor arguments and methods
+    are provided in a compatible way.
+
+CONSTRUCTOR
+  $sock = IO::Socket::IP->new( %args )
+    Creates a new "IO::Socket::IP" object. If any arguments are passed it
+    will be configured to contain a newly created socket handle, and be
+    configured according to the argmuents. The recognised arguments are:
+
+    Type => INT
+            The socket type (e.g. "SOCK_STREAM", "SOCK_DGRAM"). Will be
+            inferred by "getaddrinfo" from the service name if not supplied.
+
+    Proto => INT
+            IP protocol for the socket connection. Will be inferred by
+            "getaddrinfo" from the service name, or by the kernel from the
+            socket type, if not supplied.
+
+    PeerHost => STRING
+    PeerService => STRING
+            Hostname and service name for the peer to "connect()" to. The
+            service name may be given as a port number, as a decimal string.
+
+            For symmetry with the accessor methods and compatibility with
+            "IO::Socket::INET", "PeerAddr" and "PeerPort" are accepted as
+            synonyms respectively.
+
+    Listen => INT
+            Puts the socket into listening mode where new connections can be
+            accepted using the "accept" method.
+
+    LocalHost => STRING
+    LocalService => STRING
+            Hostname and service name for the local address to "bind()" to.
+
+            For symmetry with the accessor methods and compatibility with
+            "IO::Socket::INET", "LocalAddr" and "LocalPort" are accepted as
+            synonyms respectively.
+
+    ReuseAddr => BOOL
+            If true, set the "SO_REUSEADDR" sockopt
+
+    ReusePort => BOOL
+            If true, set the "SO_REUSEPORT" sockopt (not all OSes implement
+            this sockopt)
+
+    Broadcast => BOOL
+            If true, set the "SO_BROADCAST" sockopt
+
+METHODS
+  ( $host, $service ) = $sock->sockhost_service( $numeric )
+    Return the hostname and service name for the local endpoint (that is,
+    the socket address given by the "sockname" method).
+
+    If $numeric is true, these will be given in numeric form rather than
+    being resolved into names.
+
+    This method is used to implement the following for convenience wrappers.
+    If both host and service names are required, this method is preferrable
+    to the following wrappers, because it will call getnameinfo(3) only
+    once.
+
+  $addr = $sock->sockaddr
+    Return the numeric form of the local address
+
+  $port = $sock->sockport
+    Return the numeric form of the local port number
+
+  $host = $sock->sockhost
+    Return the resolved name of the local address
+
+  $service = $sock->sockservice
+    Return the resolved name of the local port number
+
+  ( $host, $service ) = $sock->peerhost_service( $numeric )
+    Similar to the "sockhost_service" method, but instead returns the
+    hostname and service name for the peer endpoint (that is, the socket
+    address given by the "peername" method).
+
+  $addr = $sock->peeraddr
+    Return the numeric form of the peer address
+
+  $port = $sock->peerport
+    Return the numeric form of the peer port number
+
+  $host = $sock->peerhost
+    Return the resolved name of the peer address
+
+  $service = $sock->peerservice
+    Return the resolved name of the peer port number
+
+TODO
+    *       Accept "hostname:port" notation in "LocalAddr" and "PeerAddr"
+            constructor args, as per "IO::Socket::INET". Special care should
+            be taken on raw IPv6 addresses, which need wrapping as
+            "[2001::0123:4567]:89".
+
+    *       Raise errors by correctly setting $! or appropriate, and
+            returning undef, as per other "IO::Socket" modules. Some care is
+            required on how to handle e.g. errors from getaddrinfo(3), which
+            don't have "errno" values.
+
+    *       Support "LocalHost" and "LocalService" to "bind()" even when
+            also "connect()"ing to a peer.
+
+    *       Return a useful error code if "connect()" fails. Because of the
+            inherent "try-them-all" behaviour, it isn't easy to know what's
+            the most appropriate failure.
+
+AUTHOR
+    Paul Evans <leonerd@leonerd.org.uk>
+
