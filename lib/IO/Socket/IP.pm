@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Carp;
 
@@ -36,7 +36,7 @@ C<IO::Socket::IP> - Use IPv4 and IPv6 sockets in a protocol-independent way
  my $sock = IO::Socket::IP->new(
     PeerHost    => "www.google.com",
     PeerService => "www",
- );
+ ) or die "Cannot construct socket - $@";
 
  printf "Now connected to %s:%s\n", $sock->peerhost_service;
 
@@ -122,6 +122,10 @@ If true, set the C<SO_BROADCAST> sockopt
 
 =back
 
+If the constructor fails, it will set C<$@> to an appropriate error message;
+this may be from C<$!> or it may be some other string; not every failure
+necessarily has an associated C<errno> value.
+
 =cut
 
 sub configure
@@ -147,7 +151,7 @@ sub configure
 
    if( defined $arg->{Type} ) {
       my $type = delete $arg->{Type};
-      $hints{type} = $type;
+      $hints{socktype} = $type;
    }
 
    if( defined $arg->{Proto} ) {
@@ -169,8 +173,7 @@ sub configure
 
       ( my $err, @sockaddrs ) = getaddrinfo( $host, $service, \%hints );
 
-      # TODO: This needs to raise somehow in $!
-      $err and croak "Cannot getaddrinfo - $err;"
+      $err and ( $@ = "$err", return );
    }
 
    if( defined $arg->{PeerHost} or defined $arg->{PeerService} ) {
@@ -181,8 +184,7 @@ sub configure
 
       ( my $err, @peeraddrs ) = getaddrinfo( $host, $service, \%hints );
 
-      # TODO: This needs to raise somehow in $!
-      $err and croak "Cannot getaddrinfo - $err;"
+      $err and ( $@ = "$err", return );
    }
 
    push @sockopts_enabled, SO_REUSEADDR if delete $arg->{ReuseAddr};
@@ -204,7 +206,9 @@ sub configure
 
          $self->socket( @{$addr}{qw( family socktype protocol )} ) or next;
 
-         $self->setsockopt( SOL_SOCKET, $_, pack "i", 1 ) or return undef for @sockopts_enabled;
+         foreach my $sockopt ( @sockopts_enabled ) {
+            $self->setsockopt( SOL_SOCKET, $sockopt, pack "i", 1 ) or ( $@ = "$!", return );
+         }
 
          $self->connect( $addr->{addr} ) or next;
 
@@ -218,17 +222,22 @@ sub configure
 
          $self->socket( @{$addr}{qw( family socktype protocol )} ) or next;
 
-         $self->setsockopt( SOL_SOCKET, $_, pack "i", 1 ) or return undef for @sockopts_enabled;
+         foreach my $sockopt ( @sockopts_enabled ) {
+            $self->setsockopt( SOL_SOCKET, $sockopt, pack "i", 1 ) or ( $@ = "$!", return );
+         }
 
          $self->bind( $addr->{addr} ) or next;
 
-         $self->listen( $listenqueue ) or return undef if defined $listenqueue;
+         if( defined $listenqueue ) {
+            $self->listen( $listenqueue ) or ( $@ = "$!", return );
+         }
 
          return $self;
       }
    }
 
-   # TODO: an error code
+   # TODO: Rather than just the last failure, see if we can find a better one
+   $@ = "$!";
    return undef;
 }
 
@@ -350,12 +359,6 @@ __END__
 Accept C<hostname:port> notation in C<LocalAddr> and C<PeerAddr> constructor
 args, as per C<IO::Socket::INET>. Special care should be taken on raw IPv6
 addresses, which need wrapping as C<[2001::0123:4567]:89>.
-
-=item *
-
-Raise errors by correctly setting C<$!> or appropriate, and returning undef,
-as per other C<IO::Socket> modules. Some care is required on how to handle
-e.g. errors from C<getaddrinfo(3)>, which don't have C<errno> values.
 
 =item *
 

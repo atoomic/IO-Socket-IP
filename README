@@ -8,7 +8,7 @@ SYNOPSIS
      my $sock = IO::Socket::IP->new(
         PeerHost    => "www.google.com",
         PeerService => "www",
-     );
+     ) or die "Cannot construct socket - $@";
 
      printf "Now connected to %s:%s\n", $sock->peerhost_service;
 
@@ -76,6 +76,10 @@ CONSTRUCTOR
     Broadcast => BOOL
             If true, set the "SO_BROADCAST" sockopt
 
+    If the constructor fails, it will set $@ to an appropriate error
+    message; this may be from $! or it may be some other string; not every
+    failure necessarily has an associated "errno" value.
+
 METHODS
   ( $host, $service ) = $sock->sockhost_service( $numeric )
     Return the hostname and service name for the local endpoint (that is,
@@ -123,11 +127,6 @@ TODO
             constructor args, as per "IO::Socket::INET". Special care should
             be taken on raw IPv6 addresses, which need wrapping as
             "[2001::0123:4567]:89".
-
-    *       Raise errors by correctly setting $! or appropriate, and
-            returning undef, as per other "IO::Socket" modules. Some care is
-            required on how to handle e.g. errors from getaddrinfo(3), which
-            don't have "errno" values.
 
     *       Support "LocalHost" and "LocalService" to "bind()" even when
             also "connect()"ing to a peer.

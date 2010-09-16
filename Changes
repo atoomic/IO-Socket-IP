@@ -1,5 +1,12 @@
 Revision history for IO-Socket-IP
 
+0.03    CHANGES:
+         * Set $@ to raise error messages from constructor
+
+        BUGFIXES:
+         * Correctly implement 'Type' constructor argument
+         * Test SO_BROADCAST on udp instead of tcp as some OSes forbid it
+
 0.02    BUGFIXES:
          * Not all OSes return true sockopts as 1; test simply for non-zero
          * Gracefully skip IPv6 tests if Socket6 unavailable

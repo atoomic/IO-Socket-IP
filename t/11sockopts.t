@@ -32,7 +32,7 @@ SKIP: {
 
 $sock = IO::Socket::IP->new(
    LocalHost => "127.0.0.1",
-   Proto     => "tcp",
+   Proto     => "udp",
    Broadcast => 1,
 ) or die "Cannot socket() - $!";
 
