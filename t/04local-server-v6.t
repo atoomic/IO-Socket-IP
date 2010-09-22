@@ -12,7 +12,7 @@ eval { require IO::Socket::INET6 } or
 eval { require Socket6 } or
    plan skip_all => "No Socket6";
 
-plan tests => 14;
+plan tests => 26;
 
 use IO::Socket::IP;
 use Socket;
@@ -26,9 +26,12 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
 
    ok( defined $testserver, "IO::Socket::IP->new constructs a $socktype socket" );
 
+   is( $testserver->sockdomain, Socket6::AF_INET6(), "\$testserver->sockdomain for $socktype" );
+   is( $testserver->socktype,   Socket->$socktype,   "\$testserver->socktype for $socktype" );
+
    $testserver->blocking( 0 );
 
-   is( $testserver->sockaddr, "::1",       "\$testserver->sockaddr for $socktype" );
+   is( $testserver->sockhost, "::1",       "\$testserver->sockhost for $socktype" );
    like( $testserver->sockport, qr/^\d+$/, "\$testserver->sockport for $socktype" );
 
    my $socket = IO::Socket::INET6->new(
@@ -45,6 +48,9 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    ok( defined $testclient, "accepted test $socktype client" );
    isa_ok( $testclient, "IO::Socket::IP", "\$testclient for $socktype" );
 
+   is( $testclient->sockdomain, Socket6::AF_INET6(), "\$testclient->sockdomain for $socktype" );
+   is( $testclient->socktype,   Socket->$socktype,   "\$testclient->socktype for $socktype" );
+
    is_deeply( [ Socket6::unpack_sockaddr_in6( $socket->sockname ) ],
               [ Socket6::unpack_sockaddr_in6( $testclient->peername ) ],
               "\$socket->sockname for $socktype" );
@@ -52,4 +58,7 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    is_deeply( [ Socket6::unpack_sockaddr_in6( $socket->peername ) ],
               [ Socket6::unpack_sockaddr_in6( $testclient->sockname ) ],
               "\$socket->peername for $socktype" );
+
+   is( $testclient->sockport, $socket->peerport, "\$testclient->sockport for $socktype" );
+   is( $testclient->peerport, $socket->sockport, "\$testclient->peerport for $socktype" );
 }

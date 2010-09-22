@@ -1,5 +1,14 @@
 Revision history for IO-Socket-IP
 
+0.04    CHANGES:
+         * Try to yield the most appropriate connect/bind/socket error
+         * Implement sockhost/peerhost methods to match ::INET, moved hostname
+           methods to sockhostname/peerhostname
+        
+        BUGFIXES:
+         * Work around IO::Socket bug where ->accept'ed sockets do not get
+           ->sockdomain or ->socktype
+
 0.03    CHANGES:
          * Set $@ to raise error messages from constructor
 

@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use Carp;
 
@@ -197,6 +197,10 @@ sub configure
 
    keys %$arg and croak "Unexpected keys - " . join( ", ", sort keys %$arg );
 
+   my $socketerr;
+   my $binderr;
+   my $connecterr;
+
    if( @peeraddrs ) {
       # Loop on socket / bind? / connect
       # TODO: Local binds
@@ -204,13 +208,13 @@ sub configure
       while( @peeraddrs ) {
          my $addr = shift @peeraddrs;
 
-         $self->socket( @{$addr}{qw( family socktype protocol )} ) or next;
+         $self->socket( @{$addr}{qw( family socktype protocol )} ) or ( $socketerr = $!, next );
 
          foreach my $sockopt ( @sockopts_enabled ) {
             $self->setsockopt( SOL_SOCKET, $sockopt, pack "i", 1 ) or ( $@ = "$!", return );
          }
 
-         $self->connect( $addr->{addr} ) or next;
+         $self->connect( $addr->{addr} ) or ( $connecterr = $!, next );
 
          return $self;
       }
@@ -220,13 +224,13 @@ sub configure
       while( @sockaddrs ) {
          my $addr = shift @sockaddrs;
 
-         $self->socket( @{$addr}{qw( family socktype protocol )} ) or next;
+         $self->socket( @{$addr}{qw( family socktype protocol )} ) or ( $socketerr = $!, next );
 
          foreach my $sockopt ( @sockopts_enabled ) {
             $self->setsockopt( SOL_SOCKET, $sockopt, pack "i", 1 ) or ( $@ = "$!", return );
          }
 
-         $self->bind( $addr->{addr} ) or next;
+         $self->bind( $addr->{addr} ) or ( $binderr = $!, next );
 
          if( defined $listenqueue ) {
             $self->listen( $listenqueue ) or ( $@ = "$!", return );
@@ -236,8 +240,8 @@ sub configure
       }
    }
 
-   # TODO: Rather than just the last failure, see if we can find a better one
-   $@ = "$!";
+   # Pick the most appropriate error, stringified
+   $@ = ( $connecterr || $binderr || $socketerr ) . '';
    return undef;
 }
 
@@ -283,7 +287,7 @@ sub sockhost_service
    $self->_get_host_service( $self->sockname, $numeric );
 }
 
-=head2 $addr = $sock->sockaddr
+=head2 $addr = $sock->sockhost
 
 Return the numeric form of the local address
 
@@ -291,7 +295,7 @@ Return the numeric form of the local address
 
 Return the numeric form of the local port number
 
-=head2 $host = $sock->sockhost
+=head2 $host = $sock->sockhostname
 
 Return the resolved name of the local address
 
@@ -301,10 +305,11 @@ Return the resolved name of the local port number
 
 =cut
 
-sub sockaddr    { ( shift->sockhost_service(1) )[0] }
-sub sockport    { ( shift->sockhost_service(1) )[1] }
-sub sockhost    { ( shift->sockhost_service(0) )[0] }
-sub sockservice { ( shift->sockhost_service(0) )[1] }
+sub sockhost { ( shift->sockhost_service(1) )[0] }
+sub sockport { ( shift->sockhost_service(1) )[1] }
+
+sub sockhostname { ( shift->sockhost_service(0) )[0] }
+sub sockservice  { ( shift->sockhost_service(0) )[1] }
 
 =head2 ( $host, $service ) = $sock->peerhost_service( $numeric )
 
@@ -322,7 +327,7 @@ sub peerhost_service
    $self->_get_host_service( $self->peername, $numeric );
 }
 
-=head2 $addr = $sock->peeraddr
+=head2 $addr = $sock->peerhost
 
 Return the numeric form of the peer address
 
@@ -330,7 +335,7 @@ Return the numeric form of the peer address
 
 Return the numeric form of the peer port number
 
-=head2 $host = $sock->peerhost
+=head2 $host = $sock->peerhostname
 
 Return the resolved name of the peer address
 
@@ -340,10 +345,25 @@ Return the resolved name of the peer port number
 
 =cut
 
-sub peeraddr    { ( shift->peerhost_service(1) )[0] }
+sub peerhost    { ( shift->peerhost_service(1) )[0] }
 sub peerport    { ( shift->peerhost_service(1) )[1] }
-sub peerhost    { ( shift->peerhost_service(0) )[0] }
-sub peerservice { ( shift->peerhost_service(0) )[1] }
+
+sub peerhostname { ( shift->peerhost_service(0) )[0] }
+sub peerservice  { ( shift->peerhost_service(0) )[1] }
+
+# This unbelievably dodgy hack works around the bug that IO::Socket doesn't do
+# it
+#    https://rt.cpan.org/Ticket/Display.html?id=61577
+sub accept
+{
+   my $self = shift;
+   my ( $new, $peer ) = $self->SUPER::accept or return;
+
+   ${*$new}{$_} = ${*$self}{$_} for qw( io_socket_domain io_socket_type io_socket_proto );
+
+   return wantarray ? ( $new, $peer )
+                    : $new;
+}
 
 # Keep perl happy; keep Britain tidy
 1;
@@ -367,9 +387,10 @@ C<connect()>ing to a peer.
 
 =item *
 
-Return a useful error code if C<connect()> fails. Because of the inherent
-"try-them-all" behaviour, it isn't easy to know what's the most appropriate
-failure.
+Cache the returns from C<sockhost_service> and C<peerhost_service> to avoid
+double-lookup overhead in such code as
+
+  printf "Peer is %s:%d\n", $sock->peerhost, $sock->peerport;
 
 =back
 

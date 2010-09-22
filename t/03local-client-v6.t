@@ -12,7 +12,7 @@ eval { require IO::Socket::INET6 } or
 eval { require Socket6 } or
    plan skip_all => "No Socket6";
 
-plan tests => 12;
+plan tests => 16;
 
 use IO::Socket::IP;
 use Socket;
@@ -35,6 +35,9 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
 
    ok( defined $socket, "IO::Socket::IP->new constructs a $socktype socket" );
 
+   is( $socket->sockdomain, Socket6::AF_INET6(), "\$socket->sockdomain for $socktype" );
+   is( $socket->socktype,   Socket->$socktype,   "\$socket->socktype for $socktype" );
+
    my $testclient = ( $socktype eq "SOCK_STREAM" ) ? 
       $testserver->accept : 
       do { $testserver->connect( $socket->sockname ); $testserver };
@@ -49,7 +52,7 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
               [ Socket6::unpack_sockaddr_in6( $testclient->sockname ) ],
               "\$socket->peername for $socktype" );
 
-   is( $socket->peeraddr, "::1",                 "\$socket->peeraddr for $socktype" );
+   is( $socket->peerhost, "::1",                 "\$socket->peerhost for $socktype" );
    is( $socket->peerport, $testserver->sockport, "\$socket->peerport for $socktype" );
 
    # Can't easily test the non-numeric versions without relying on the system's

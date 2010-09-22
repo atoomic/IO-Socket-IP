@@ -93,13 +93,13 @@ METHODS
     to the following wrappers, because it will call getnameinfo(3) only
     once.
 
-  $addr = $sock->sockaddr
+  $addr = $sock->sockhost
     Return the numeric form of the local address
 
   $port = $sock->sockport
     Return the numeric form of the local port number
 
-  $host = $sock->sockhost
+  $host = $sock->sockhostname
     Return the resolved name of the local address
 
   $service = $sock->sockservice
@@ -110,13 +110,13 @@ METHODS
     hostname and service name for the peer endpoint (that is, the socket
     address given by the "peername" method).
 
-  $addr = $sock->peeraddr
+  $addr = $sock->peerhost
     Return the numeric form of the peer address
 
   $port = $sock->peerport
     Return the numeric form of the peer port number
 
-  $host = $sock->peerhost
+  $host = $sock->peerhostname
     Return the resolved name of the peer address
 
   $service = $sock->peerservice
@@ -131,9 +131,10 @@ TODO
     *       Support "LocalHost" and "LocalService" to "bind()" even when
             also "connect()"ing to a peer.
 
-    *       Return a useful error code if "connect()" fails. Because of the
-            inherent "try-them-all" behaviour, it isn't easy to know what's
-            the most appropriate failure.
+    *       Cache the returns from "sockhost_service" and "peerhost_service"
+            to avoid double-lookup overhead in such code as
+
+              printf "Peer is %s:%d\n", $sock->peerhost, $sock->peerport;
 
 AUTHOR
     Paul Evans <leonerd@leonerd.org.uk>

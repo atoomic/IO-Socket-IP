@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 14;
+use Test::More tests => 26;
 
 use IO::Socket::IP;
 
@@ -17,9 +17,12 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
 
    ok( defined $testserver, "IO::Socket::IP->new constructs a $socktype socket" );
 
+   is( $testserver->sockdomain, AF_INET,           "\$testserver->sockdomain for $socktype" );
+   is( $testserver->socktype,   Socket->$socktype, "\$testserver->socktype for $socktype" );
+
    $testserver->blocking( 0 );
 
-   is( $testserver->sockaddr, "127.0.0.1", "\$testserver->sockaddr for $socktype" );
+   is( $testserver->sockhost, "127.0.0.1", "\$testserver->sockhost for $socktype" );
    like( $testserver->sockport, qr/^\d+$/, "\$testserver->sockport for $socktype" );
 
    my $socket = IO::Socket::INET->new(
@@ -36,6 +39,9 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    ok( defined $testclient, "accepted test $socktype client" );
    isa_ok( $testclient, "IO::Socket::IP", "\$testclient for $socktype" );
 
+   is( $testclient->sockdomain, AF_INET,           "\$testclient->sockdomain for $socktype" );
+   is( $testclient->socktype,   Socket->$socktype, "\$testclient->socktype for $socktype" );
+
    is_deeply( [ unpack_sockaddr_in $socket->sockname ],
               [ unpack_sockaddr_in $testclient->peername ],
               "\$socket->sockname for $socktype" );
@@ -43,4 +49,7 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    is_deeply( [ unpack_sockaddr_in $socket->peername ],
               [ unpack_sockaddr_in $testclient->sockname ],
               "\$socket->peername for $socktype" );
+
+   is( $testclient->sockport, $socket->peerport, "\$testclient->sockport for $socktype" );
+   is( $testclient->peerport, $socket->sockport, "\$testclient->peerport for $socktype" );
 }

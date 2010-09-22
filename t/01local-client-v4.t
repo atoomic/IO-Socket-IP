@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 12;
+use Test::More tests => 16;
 
 use IO::Socket::IP;
 
@@ -26,6 +26,9 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
 
    ok( defined $socket, "IO::Socket::IP->new constructs a $socktype socket" );
 
+   is( $socket->sockdomain, AF_INET,           "\$socket->sockdomain for $socktype" );
+   is( $socket->socktype,   Socket->$socktype, "\$socket->socktype for $socktype" );
+
    my $testclient = ( $socktype eq "SOCK_STREAM" ) ? 
       $testserver->accept : 
       do { $testserver->connect( $socket->sockname ); $testserver };
@@ -40,7 +43,7 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
               [ unpack_sockaddr_in $testclient->sockname ],
               "\$socket->peername for $socktype" );
 
-   is( $socket->peeraddr, "127.0.0.1",           "\$socket->peeraddr for $socktype" );
+   is( $socket->peerhost, "127.0.0.1",           "\$socket->peerhost for $socktype" );
    is( $socket->peerport, $testserver->sockport, "\$socket->peerport for $socktype" );
 
    # Can't easily test the non-numeric versions without relying on the system's
