@@ -1,5 +1,11 @@
 Revision history for IO-Socket-IP
 
+0.05    CHANGES:
+         * Implement combined ->bind and ->connect operations
+         * Accept "host:service" as *Addr args, and PeerAddr as sole
+           constructor argument
+         * Accept "name(port)" as service arguments
+
 0.04    CHANGES:
          * Try to yield the most appropriate connect/bind/socket error
          * Implement sockhost/peerhost methods to match ::INET, moved hostname

@@ -80,6 +80,35 @@ CONSTRUCTOR
     message; this may be from $! or it may be some other string; not every
     failure necessarily has an associated "errno" value.
 
+    If either "LocalHost" or "PeerHost" (or their "...Addr" synonyms) have
+    any of the following special forms, they are split to imply both the
+    hostname and service name:
+
+     hostname.example.org:port    # DNS name
+     10.0.0.1:port                # IPv4 address
+     [fe80::123]:port             # IPv6 address
+
+    In each case, "port" is passed to the "LocalService" or "PeerService"
+    argument.
+
+    Either of "LocalService" or "PeerService" (or their "...Port" synonyms)
+    can be either a service name, a decimal number, or a string containing
+    both a service name and number, in the form
+
+     name(number)
+
+    In this case, the name will be tried first, but if the resolver does not
+    understand it then the port number will be used instead.
+
+$sock = IO::Socket::IP->new( $peeraddr )
+    As a special case, if the constructor is passed a single argument (as
+    opposed to an even-sized list of key/value pairs), it is taken to be the
+    value of the "PeerAddr" parameter. The example in the SYNOPSIS section
+    may also therefore be written as
+
+     my $sock = IO::Socket::IP->new( "www.google.com:www" )
+        or die "Cannot construct socket - $@";
+
 METHODS
   ( $host, $service ) = $sock->sockhost_service( $numeric )
     Return the hostname and service name for the local endpoint (that is,
@@ -123,18 +152,15 @@ METHODS
     Return the resolved name of the peer port number
 
 TODO
-    *       Accept "hostname:port" notation in "LocalAddr" and "PeerAddr"
-            constructor args, as per "IO::Socket::INET". Special care should
-            be taken on raw IPv6 addresses, which need wrapping as
-            "[2001::0123:4567]:89".
-
-    *       Support "LocalHost" and "LocalService" to "bind()" even when
-            also "connect()"ing to a peer.
-
     *       Cache the returns from "sockhost_service" and "peerhost_service"
             to avoid double-lookup overhead in such code as
 
               printf "Peer is %s:%d\n", $sock->peerhost, $sock->peerport;
+
+    *       Implement constructor args "Timeout", "Blocking" and maybe
+            "Domain". Except that "Domain" is harder because IO::Socket
+            wants to dispatch to subclasses based on it. Maybe "Family"
+            might be a better name?
 
 AUTHOR
     Paul Evans <leonerd@leonerd.org.uk>
