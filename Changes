@@ -1,5 +1,8 @@
 Revision history for IO-Socket-IP
 
+0.05_001 CHANGES:
+         * First attempt at support for nonblocking connect
+
 0.05    CHANGES:
          * Implement combined ->bind and ->connect operations
          * Accept "host:service" as *Addr args, and PeerAddr as sole

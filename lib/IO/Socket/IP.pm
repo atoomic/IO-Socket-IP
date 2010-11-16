@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.05';
+our $VERSION = '0.05_001';
 
 use Carp;
 
@@ -24,6 +24,7 @@ use Socket qw(
    SOL_SOCKET
    SO_REUSEADDR SO_REUSEPORT SO_BROADCAST
 );
+use Errno qw( EINPROGRESS );
 
 my $IPv6_re = do {
    # translation of RFC 3986 3.2.2 ABNF to re
@@ -144,6 +145,11 @@ If true, set the C<SO_REUSEPORT> sockopt (not all OSes implement this sockopt)
 
 If true, set the C<SO_BROADCAST> sockopt
 
+=item Blocking => BOOL
+
+If false, the socket will be set to nonblocking mode. If absent or true it
+will be in blocking mode. See C<NON-BLOCKING> below for more detail.
+
 =back
 
 If the constructor fails, it will set C<$@> to an appropriate error message;
@@ -170,7 +176,7 @@ service name and number, in the form
 In this case, the name will be tried first, but if the resolver does not
 understand it then the port number will be used instead.
 
-=head1 $sock = IO::Socket::IP->new( $peeraddr )
+=head2 $sock = IO::Socket::IP->new( $peeraddr )
 
 As a special case, if the constructor is passed a single argument (as
 opposed to an even-sized list of key/value pairs), it is taken to be the value
@@ -286,15 +292,14 @@ sub configure
 
    croak "Cannot Listen with a PeerHost" if defined $listenqueue and @peerinfos;
 
+   my $blocking = delete $arg->{Blocking};
+   defined $blocking or $blocking = 1;
+
    keys %$arg and croak "Unexpected keys - " . join( ", ", sort keys %$arg );
 
-   my $socketerr;
-   my $binderr;
-   my $connecterr;
-
+   my @infos;
    foreach my $local ( @localinfos ? @localinfos : {} ) {
       foreach my $peer ( @peerinfos ? @peerinfos : {} ) {
-
          next if defined $local->{family}   and defined $peer->{family}   and
             $local->{family} != $peer->{family};
          next if defined $local->{socktype} and defined $peer->{socktype} and
@@ -306,31 +311,94 @@ sub configure
          my $socktype = $local->{socktype} || $peer->{socktype} or next;
          my $protocol = $local->{protocol} || $peer->{protocol};
 
-         $self->socket( $family, $socktype, $protocol ) or ( $socketerr = $!, next );
-
-         foreach my $sockopt ( @sockopts_enabled ) {
-            $self->setsockopt( SOL_SOCKET, $sockopt, pack "i", 1 ) or ( $@ = "$!", return );
-         }
-
-         if( defined( my $addr = $local->{addr} ) ) {
-            $self->bind( $addr ) or ( $binderr = $!, next );
-         }
-
-         if( defined $listenqueue ) {
-            $self->listen( $listenqueue ) or ( $@ = "$!", return );
-         }
-
-         if( defined( my $addr = $peer->{addr} ) ) {
-            $self->connect( $addr ) or ( $connecterr = $!, next );
-         }
-
-         return $self;
+         push @infos, {
+            family    => $family,
+            socktype  => $socktype,
+            protocol  => $protocol,
+            localaddr => $local->{addr},
+            peeraddr  => $peer->{addr},
+         };
       }
    }
 
+   # In the nonblocking case, caller will be calling ->setup multiple times.
+   # Store configuration in the object for the ->setup method
+   # Yes, these are messy. Sorry, I can't help that...
+
+   ${*$self}{io_socket_ip_infos} = \@infos;
+
+   ${*$self}{io_socket_ip_idx} = -1;
+
+   ${*$self}{io_socket_ip_sockopts} = \@sockopts_enabled;
+   ${*$self}{io_socket_ip_listenqueue} = $listenqueue;
+   ${*$self}{io_socket_ip_blocking} = $blocking;
+
+   ${*$self}{io_socket_ip_errors} = [ undef, undef, undef ];
+
+   $self->setup if $blocking;
+   return $self;
+}
+
+sub setup
+{
+   my $self = shift;
+
+   while(1) {
+      ${*$self}{io_socket_ip_idx}++;
+      last if ${*$self}{io_socket_ip_idx} >= @{ ${*$self}{io_socket_ip_infos} };
+
+      my $info = ${*$self}{io_socket_ip_infos}->[${*$self}{io_socket_ip_idx}];
+
+      $self->socket( @{$info}{qw( family socktype protocol )} ) or
+         ( ${*$self}{io_socket_ip_errors}[2] = $!, next );
+
+      $self->blocking( 0 ) unless ${*$self}{io_socket_ip_blocking};
+
+      foreach my $sockopt ( @{ ${*$self}{io_socket_ip_sockopts} } ) {
+         $self->setsockopt( SOL_SOCKET, $sockopt, pack "i", 1 ) or ( $@ = "$!", return undef );
+      }
+
+      if( defined( my $addr = $info->{localaddr} ) ) {
+         $self->bind( $addr ) or
+            ( ${*$self}{io_socket_ip_errors}[1] = $!, next );
+      }
+
+      if( defined( my $listenqueue = ${*$self}{io_socket_ip_listenqueue} ) ) {
+         $self->listen( $listenqueue ) or ( $@ = "$!", return undef );
+      }
+
+      if( defined( my $addr = $info->{peeraddr} ) ) {
+         # It seems that IO::Socket hides EINPROGRESS errors, making them look
+         # like a success. This is annoying here.
+         if( $self->connect( $addr ) ) {
+            $! = EINPROGRESS, return 0 if !$self->connected; # EINPROGRESS
+
+            $! = 0;
+            return 1;
+         }
+
+         return 0 if $! == EINPROGRESS;
+
+         ${*$self}{io_socket_ip_errors}[0] = $!;
+         next;
+      }
+
+      return 1;
+   }
+
    # Pick the most appropriate error, stringified
-   $@ = ( $connecterr || $binderr || $socketerr ) . '';
+   $! = ( grep defined, @{ ${*$self}{io_socket_ip_errors}} )[0];
+   $@ = "$!";
    return undef;
+}
+
+sub connect
+{
+   my $self = shift;
+   return $self->SUPER::connect( @_ ) if @_;
+
+   $! = 0, return 1 if $self->fileno and defined $self->peername;
+   return $self->setup;
 }
 
 =head1 METHODS
@@ -458,6 +526,52 @@ sub accept
 
 __END__
 
+=head1 NON-BLOCKING
+
+If the constructor is passed a false value for the C<Blocking> argument, then
+the socket is put into nonblocking mode. When in nonblocking mode, an actual
+C<connect> operation will not have been completed by the time the constructor
+returns, because this may block.
+
+In order to use this mode, the caller should poll for writeability on the
+filehandle, each time it indicates write-readiness, the user code should call
+the C<connect> method, with no arguments. Once the socket has been connected
+to the peer, C<connect> will return true. If it returns false, the value of
+C<$!> indicates whether it should be tried again (C<EINPROGRESS>), or whether
+a permanent error has occured. This API is an extension of the
+C<IO::Socket::INET> API, unique to C<IO::Socket::IP>, because the former does
+not support multi-homed nonblocking connect.
+
+ use IO::Socket::IP;
+ use Errno qw( EINPROGRESS );
+ use Socket qw( SOCK_STREAM );
+
+ my $socket = IO::Socket::IP->new(
+    PeerHost    => "192.168.1.1",
+    PeerService => "25",
+    Type        => SOCK_STREAM,
+    Blocking    => 0,
+ ) or die "Cannot construct socket - $@";
+
+ while( !$socket->connect and $! == EINPROGRESS ) {
+    my $wvec = '';
+    vec( $wvec, fileno $socket, 1 ) = 1;
+
+    select( undef, $wvec, undef, undef ) or die "Cannot select - $!";
+ }
+
+ die "Cannot connect - $!" if $!;
+
+ ...
+
+This example uses C<select()>, but any similar mechanism should work
+analogously. The user code should be careful to note that the underlying
+descriptor may change from call to call, for example because a new socket has
+been constructed around it. Here using C<select()> this is simple because
+C<$wvec> is rebuilt every time, but more care would be required, for example,
+when using an O(1) notification mechanism such as C<epoll> or C<kqueue>, which
+takes long-lived registrations of filehandles.
+
 =head1 TODO
 
 =over 8
@@ -471,9 +585,15 @@ double-lookup overhead in such code as
 
 =item *
 
-Implement constructor args C<Timeout>, C<Blocking> and maybe C<Domain>. Except
-that C<Domain> is harder because L<IO::Socket> wants to dispatch to subclasses
+Implement constructor args C<Timeout> and maybe C<Domain>. Except that
+C<Domain> is harder because L<IO::Socket> wants to dispatch to subclasses
 based on it. Maybe C<Family> might be a better name?
+
+=item *
+
+Add new constructor args C<LocalAddrInfo> and C<PeerAddrInfo> to directly pass
+in results of C<getaddrinfo> calls, in case user code has some way to
+asynchronise them to make it truely nonblocking (such as C<Net::LibAsyncNS>.
 
 =back
 

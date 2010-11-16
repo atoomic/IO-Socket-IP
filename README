@@ -76,6 +76,11 @@ CONSTRUCTOR
     Broadcast => BOOL
             If true, set the "SO_BROADCAST" sockopt
 
+    Blocking => BOOL
+            If false, the socket will be set to nonblocking mode. If absent
+            or true it will be in blocking mode. See "NON-BLOCKING" below
+            for more detail.
+
     If the constructor fails, it will set $@ to an appropriate error
     message; this may be from $! or it may be some other string; not every
     failure necessarily has an associated "errno" value.
@@ -100,7 +105,7 @@ CONSTRUCTOR
     In this case, the name will be tried first, but if the resolver does not
     understand it then the port number will be used instead.
 
-$sock = IO::Socket::IP->new( $peeraddr )
+  $sock = IO::Socket::IP->new( $peeraddr )
     As a special case, if the constructor is passed a single argument (as
     opposed to an even-sized list of key/value pairs), it is taken to be the
     value of the "PeerAddr" parameter. The example in the SYNOPSIS section
@@ -151,16 +156,66 @@ METHODS
   $service = $sock->peerservice
     Return the resolved name of the peer port number
 
+NON-BLOCKING
+    If the constructor is passed a false value for the "Blocking" argument,
+    then the socket is put into nonblocking mode. When in nonblocking mode,
+    an actual "connect" operation will not have been completed by the time
+    the constructor returns, because this may block.
+
+    In order to use this mode, the caller should poll for writeability on
+    the filehandle, each time it indicates write-readiness, the user code
+    should call the "connect" method, with no arguments. Once the socket has
+    been connected to the peer, "connect" will return true. If it returns
+    false, the value of $! indicates whether it should be tried again
+    ("EINPROGRESS"), or whether a permanent error has occured. This API is
+    an extension of the "IO::Socket::INET" API, unique to "IO::Socket::IP",
+    because the former does not support multi-homed nonblocking connect.
+
+     use IO::Socket::IP;
+     use Errno qw( EINPROGRESS );
+     use Socket qw( SOCK_STREAM );
+
+     my $socket = IO::Socket::IP->new(
+        PeerHost    => "192.168.1.1",
+        PeerService => "25",
+        Type        => SOCK_STREAM,
+        Blocking    => 0,
+     ) or die "Cannot construct socket - $@";
+
+     while( !$socket->connect and $! == EINPROGRESS ) {
+        my $wvec = '';
+        vec( $wvec, fileno $socket, 1 ) = 1;
+
+        select( undef, $wvec, undef, undef ) or die "Cannot select - $!";
+     }
+
+     die "Cannot connect - $!" if $!;
+
+     ...
+
+    This example uses "select()", but any similar mechanism should work
+    analogously. The user code should be careful to note that the underlying
+    descriptor may change from call to call, for example because a new
+    socket has been constructed around it. Here using "select()" this is
+    simple because $wvec is rebuilt every time, but more care would be
+    required, for example, when using an O(1) notification mechanism such as
+    "epoll" or "kqueue", which takes long-lived registrations of
+    filehandles.
+
 TODO
     *       Cache the returns from "sockhost_service" and "peerhost_service"
             to avoid double-lookup overhead in such code as
 
               printf "Peer is %s:%d\n", $sock->peerhost, $sock->peerport;
 
-    *       Implement constructor args "Timeout", "Blocking" and maybe
-            "Domain". Except that "Domain" is harder because IO::Socket
-            wants to dispatch to subclasses based on it. Maybe "Family"
-            might be a better name?
+    *       Implement constructor args "Timeout" and maybe "Domain". Except
+            that "Domain" is harder because IO::Socket wants to dispatch to
+            subclasses based on it. Maybe "Family" might be a better name?
+
+    *       Add new constructor args "LocalAddrInfo" and "PeerAddrInfo" to
+            directly pass in results of "getaddrinfo" calls, in case user
+            code has some way to asynchronise them to make it truely
+            nonblocking (such as "Net::LibAsyncNS".
 
 AUTHOR
     Paul Evans <leonerd@leonerd.org.uk>
