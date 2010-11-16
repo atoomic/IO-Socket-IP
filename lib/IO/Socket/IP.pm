@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.05_001';
+our $VERSION = '0.05_002';
 
 use Carp;
 
@@ -22,7 +22,7 @@ use Socket::GetAddrInfo qw(
 use Socket qw(
    SOCK_DGRAM
    SOL_SOCKET
-   SO_REUSEADDR SO_REUSEPORT SO_BROADCAST
+   SO_REUSEADDR SO_REUSEPORT SO_BROADCAST SO_ERROR
 );
 use Errno qw( EINPROGRESS );
 
@@ -386,6 +386,8 @@ sub setup
       return 1;
    }
 
+   $self->close;
+
    # Pick the most appropriate error, stringified
    $! = ( grep defined, @{ ${*$self}{io_socket_ip_errors}} )[0];
    $@ = "$!";
@@ -398,6 +400,12 @@ sub connect
    return $self->SUPER::connect( @_ ) if @_;
 
    $! = 0, return 1 if $self->fileno and defined $self->peername;
+
+   if( $self->fileno ) {
+      # A connect has just failed, get its error value
+      ${*$self}{io_socket_ip_errors}[0] = $self->getsockopt( SOL_SOCKET, SO_ERROR );
+   }
+
    return $self->setup;
 }
 

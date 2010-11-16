@@ -1,5 +1,8 @@
 Revision history for IO-Socket-IP
 
+0.05_002 CHANGES:
+         * Report nonblocking connect(2) failures correctly
+
 0.05_001 CHANGES:
          * First attempt at support for nonblocking connect
 
