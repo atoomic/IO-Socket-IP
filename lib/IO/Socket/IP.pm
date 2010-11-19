@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.05_002';
+our $VERSION = '0.05_003';
 
 use Carp;
 
@@ -118,6 +118,14 @@ For symmetry with the accessor methods and compatibility with
 C<IO::Socket::INET>, C<PeerAddr> and C<PeerPort> are accepted as synonyms
 respectively.
 
+=item PeerAddrInfo => ARRAY
+
+Alternate form of specifying the peer to C<connect()> to. This should be an
+array of the form returned by C<Socket::GetAddrInfo::getaddrinfo>.
+
+This parameter overrides C<PeerHost> and C<PeerService>, and will ignore any
+values given for C<Type> or C<Proto>.
+
 =item Listen => INT
 
 Puts the socket into listening mode where new connections can be accepted
@@ -132,6 +140,14 @@ Hostname and service name for the local address to C<bind()> to.
 For symmetry with the accessor methods and compatibility with
 C<IO::Socket::INET>, C<LocalAddr> and C<LocalPort> are accepted as synonyms
 respectively.
+
+=item LocalAddrInfo => ARRAY
+
+Alternate form of specifying the local address to C<bind()> to. This should be
+an array of the form returned by C<Socket::GetAddrInfo::getaddrinfo>.
+
+This parameter overrides C<LocalHost> and C<LocalService>, and will ignore any
+values given for C<Type> or C<Proto>.
 
 =item ReuseAddr => BOOL
 
@@ -249,7 +265,10 @@ sub configure
       $hints{protocol} = $proto;
    }
 
-   if( defined $arg->{LocalHost} or defined $arg->{LocalService} ) {
+   if( my $info = delete $arg->{LocalAddrInfo} ) {
+      @localinfos = @$info;
+   }
+   elsif( defined $arg->{LocalHost} or defined $arg->{LocalService} ) {
       # Either may be undef
       my $host = delete $arg->{LocalHost};
       my $service = delete $arg->{LocalService};
@@ -266,7 +285,10 @@ sub configure
       $err and ( $@ = "$err", return );
    }
 
-   if( defined $arg->{PeerHost} or defined $arg->{PeerService} ) {
+   if( my $info = delete $arg->{PeerAddrInfo} ) {
+      @peerinfos = @$info;
+   }
+   elsif( defined $arg->{PeerHost} or defined $arg->{PeerService} ) {
       defined( my $host = delete $arg->{PeerHost} ) or
          croak "Expected 'PeerHost'";
       defined( my $service = delete $arg->{PeerService} ) or
@@ -335,7 +357,9 @@ sub configure
 
    ${*$self}{io_socket_ip_errors} = [ undef, undef, undef ];
 
-   $self->setup if $blocking;
+   if( $blocking ) {
+      $self->setup or return undef;
+   }
    return $self;
 }
 
@@ -580,6 +604,15 @@ C<$wvec> is rebuilt every time, but more care would be required, for example,
 when using an O(1) notification mechanism such as C<epoll> or C<kqueue>, which
 takes long-lived registrations of filehandles.
 
+When performing a non-blocking connect, it may be preferred to use the
+alternative C<LocalAddrInfo> and C<PeerAddrInfo> arguments. These allow the
+caller to perform the C<getaddrinfo> calls required, because if
+C<IO::Socket::IP> makes them they will definitely block. These arguments are
+provided for the case where the caller already has the C<getaddrinfo> results,
+perhaps obtained by some non-blocking method like L<Net::LibAsyncNS>, or by
+performing the lookup in a child process and passing the results back to the
+main process in an event loop of some kind.
+
 =head1 TODO
 
 =over 8
@@ -596,12 +629,6 @@ double-lookup overhead in such code as
 Implement constructor args C<Timeout> and maybe C<Domain>. Except that
 C<Domain> is harder because L<IO::Socket> wants to dispatch to subclasses
 based on it. Maybe C<Family> might be a better name?
-
-=item *
-
-Add new constructor args C<LocalAddrInfo> and C<PeerAddrInfo> to directly pass
-in results of C<getaddrinfo> calls, in case user code has some way to
-asynchronise them to make it truely nonblocking (such as C<Net::LibAsyncNS>.
 
 =back
 

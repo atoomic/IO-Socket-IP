@@ -42,4 +42,4 @@ is_deeply( [ unpack_sockaddr_in $socket->peername ],
 is( $socket->peerhost, "127.0.0.1",           '$socket->peerhost' );
 is( $socket->peerport, $testserver->sockport, '$socket->peerport' );
 
-is( $socket->blocking, 0, '$socket->blocking' );
+ok( !$socket->blocking, '$socket->blocking' );

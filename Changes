@@ -1,5 +1,10 @@
 Revision history for IO-Socket-IP
 
+0.05_003 CHANGES:
+         * Implemented LocalAddrInfo and PeerAddrInfo args
+         * Example of nonblocking usage, using Net::LibAsyncNS
+         * Bugfix to blocking constructor failure modes
+
 0.05_002 CHANGES:
          * Report nonblocking connect(2) failures correctly
 

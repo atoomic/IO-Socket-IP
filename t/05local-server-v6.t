@@ -8,7 +8,7 @@ use Test::More;
 # TODO: See if we can do this using only Socket6
 
 eval { require IO::Socket::INET6 } or
-   plan skip_all => "No INET6";
+   plan skip_all => "No IO::Socket::INET6";
 eval { require Socket6 } or
    plan skip_all => "No Socket6";
 

@@ -54,6 +54,14 @@ CONSTRUCTOR
             "IO::Socket::INET", "PeerAddr" and "PeerPort" are accepted as
             synonyms respectively.
 
+    PeerAddrInfo => ARRAY
+            Alternate form of specifying the peer to "connect()" to. This
+            should be an array of the form returned by
+            "Socket::GetAddrInfo::getaddrinfo".
+
+            This parameter overrides "PeerHost" and "PeerService", and will
+            ignore any values given for "Type" or "Proto".
+
     Listen => INT
             Puts the socket into listening mode where new connections can be
             accepted using the "accept" method.
@@ -65,6 +73,14 @@ CONSTRUCTOR
             For symmetry with the accessor methods and compatibility with
             "IO::Socket::INET", "LocalAddr" and "LocalPort" are accepted as
             synonyms respectively.
+
+    LocalAddrInfo => ARRAY
+            Alternate form of specifying the local address to "bind()" to.
+            This should be an array of the form returned by
+            "Socket::GetAddrInfo::getaddrinfo".
+
+            This parameter overrides "LocalHost" and "LocalService", and
+            will ignore any values given for "Type" or "Proto".
 
     ReuseAddr => BOOL
             If true, set the "SO_REUSEADDR" sockopt
@@ -202,6 +218,16 @@ NON-BLOCKING
     "epoll" or "kqueue", which takes long-lived registrations of
     filehandles.
 
+    When performing a non-blocking connect, it may be preferred to use the
+    alternative "LocalAddrInfo" and "PeerAddrInfo" arguments. These allow
+    the caller to perform the "getaddrinfo" calls required, because if
+    "IO::Socket::IP" makes them they will definitely block. These arguments
+    are provided for the case where the caller already has the "getaddrinfo"
+    results, perhaps obtained by some non-blocking method like
+    Net::LibAsyncNS, or by performing the lookup in a child process and
+    passing the results back to the main process in an event loop of some
+    kind.
+
 TODO
     *       Cache the returns from "sockhost_service" and "peerhost_service"
             to avoid double-lookup overhead in such code as
@@ -211,11 +237,6 @@ TODO
     *       Implement constructor args "Timeout" and maybe "Domain". Except
             that "Domain" is harder because IO::Socket wants to dispatch to
             subclasses based on it. Maybe "Family" might be a better name?
-
-    *       Add new constructor args "LocalAddrInfo" and "PeerAddrInfo" to
-            directly pass in results of "getaddrinfo" calls, in case user
-            code has some way to asynchronise them to make it truely
-            nonblocking (such as "Net::LibAsyncNS".
 
 AUTHOR
     Paul Evans <leonerd@leonerd.org.uk>
