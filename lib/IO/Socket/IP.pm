@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.05_003';
+our $VERSION = '0.05_004';
 
 use Carp;
 
@@ -24,6 +24,7 @@ use Socket qw(
    SOL_SOCKET
    SO_REUSEADDR SO_REUSEPORT SO_BROADCAST SO_ERROR
 );
+use POSIX qw( dup2 );
 use Errno qw( EINPROGRESS );
 
 my $IPv6_re = do {
@@ -553,6 +554,19 @@ sub accept
                     : $new;
 }
 
+# This second unbelievably dodgy hack guarantees that $self->fileno doesn't
+# change, which is useful during nonblocking connect
+sub socket
+{
+   my $self = shift;
+   return $self->SUPER::socket(@_) if not defined $self->fileno;
+
+   # I hate core prototypes sometimes...
+   CORE::socket( my $tmph, $_[0], $_[1], $_[2] ) or return undef;
+
+   dup2( $tmph->fileno, $self->fileno ) or die "Unable to dup2 $tmph onto $self - $!";
+}
+
 # Keep perl happy; keep Britain tidy
 1;
 
@@ -597,12 +611,11 @@ not support multi-homed nonblocking connect.
  ...
 
 This example uses C<select()>, but any similar mechanism should work
-analogously. The user code should be careful to note that the underlying
-descriptor may change from call to call, for example because a new socket has
-been constructed around it. Here using C<select()> this is simple because
-C<$wvec> is rebuilt every time, but more care would be required, for example,
-when using an O(1) notification mechanism such as C<epoll> or C<kqueue>, which
-takes long-lived registrations of filehandles.
+analogously. C<IO::Socket::IP> takes care when creating new socket filehandles
+to preserve the actual file descriptor number, so such techniques as C<poll>
+or C<epoll> should be transparent to its reallocation of a different socket
+underneath, perhaps in order to switch protocol family between C<PF_INET> and
+C<PF_INET6>.
 
 When performing a non-blocking connect, it may be preferred to use the
 alternative C<LocalAddrInfo> and C<PeerAddrInfo> arguments. These allow the
@@ -629,6 +642,11 @@ double-lookup overhead in such code as
 Implement constructor args C<Timeout> and maybe C<Domain>. Except that
 C<Domain> is harder because L<IO::Socket> wants to dispatch to subclasses
 based on it. Maybe C<Family> might be a better name?
+
+=item *
+
+Investigate whether C<POSIX::dup2> upsets BSD's C<kqueue> watchers, and if so,
+consider what possible workarounds might be applied.
 
 =back
 

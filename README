@@ -210,13 +210,11 @@ NON-BLOCKING
      ...
 
     This example uses "select()", but any similar mechanism should work
-    analogously. The user code should be careful to note that the underlying
-    descriptor may change from call to call, for example because a new
-    socket has been constructed around it. Here using "select()" this is
-    simple because $wvec is rebuilt every time, but more care would be
-    required, for example, when using an O(1) notification mechanism such as
-    "epoll" or "kqueue", which takes long-lived registrations of
-    filehandles.
+    analogously. "IO::Socket::IP" takes care when creating new socket
+    filehandles to preserve the actual file descriptor number, so such
+    techniques as "poll" or "epoll" should be transparent to its
+    reallocation of a different socket underneath, perhaps in order to
+    switch protocol family between "PF_INET" and "PF_INET6".
 
     When performing a non-blocking connect, it may be preferred to use the
     alternative "LocalAddrInfo" and "PeerAddrInfo" arguments. These allow
@@ -237,6 +235,10 @@ TODO
     *       Implement constructor args "Timeout" and maybe "Domain". Except
             that "Domain" is harder because IO::Socket wants to dispatch to
             subclasses based on it. Maybe "Family" might be a better name?
+
+    *       Investigate whether "POSIX::dup2" upsets BSD's "kqueue"
+            watchers, and if so, consider what possible workarounds might be
+            applied.
 
 AUTHOR
     Paul Evans <leonerd@leonerd.org.uk>

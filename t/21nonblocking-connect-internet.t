@@ -8,10 +8,10 @@ use IO::Socket::IP;
 use IO::Socket::INET;
 use Errno qw( EINPROGRESS ECONNREFUSED );
 
-# TODO: Come up with a better server than this...
-my $test_host = "www.leonerd.org.uk";
+# Chris Williams (BINGOS) has offered cpanidx.org as a TCP testing server here
+my $test_host = "cpanidx.org";
 my $test_good_port = 80;
-my $test_bad_port = 81;
+my $test_bad_port = 6666;
 
 SKIP: {
    IO::Socket::INET->new(
@@ -80,7 +80,9 @@ SKIP: {
 
    my $dollarbang = $!;
 
-   ok( $dollarbang == ECONNREFUSED, '->connect eventually fails with ECONNREFUSED' );
+   ok( $dollarbang == ECONNREFUSED, '->connect eventually fails with ECONNREFUSED' ) or
+      diag( "  dollarbang = $dollarbang" );
+
    ok( $selectcount > 0, '->connect had to select() at least once' );
 
    ok( !$socket->opened, '$socket is not even opened' );
