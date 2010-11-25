@@ -240,6 +240,16 @@ TODO
             watchers, and if so, consider what possible workarounds might be
             applied.
 
+BUGS
+    *       Nonblocking connect fails unit tests on MSWin32 smoke-testing
+            machines. The specifics of the failure are that "connect()"
+            seems to block anyway despite being asked not to, and that
+            failure to connect is not detected properly. I am as yet unsure
+            why this is.
+
+            Blocking connect on MSWin32, and both blocking and nonblocking
+            connect on other platforms, all test OK on smoke testing.
+
 AUTHOR
     Paul Evans <leonerd@leonerd.org.uk>
 

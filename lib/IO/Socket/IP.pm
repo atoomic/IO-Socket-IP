@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.05_004';
+our $VERSION = '0.06';
 
 use Carp;
 
@@ -647,6 +647,22 @@ based on it. Maybe C<Family> might be a better name?
 
 Investigate whether C<POSIX::dup2> upsets BSD's C<kqueue> watchers, and if so,
 consider what possible workarounds might be applied.
+
+=back
+
+=head1 BUGS
+
+=over 8
+
+=item *
+
+Nonblocking connect fails unit tests on MSWin32 smoke-testing machines. The
+specifics of the failure are that C<connect()> seems to block anyway despite
+being asked not to, and that failure to connect is not detected properly. I am
+as yet unsure why this is.
+
+Blocking connect on MSWin32, and both blocking and nonblocking connect on
+other platforms, all test OK on smoke testing.
 
 =back
 
