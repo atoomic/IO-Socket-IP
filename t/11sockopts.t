@@ -7,21 +7,21 @@ use IO::Socket::IP;
 
 use Socket qw( SOL_SOCKET SO_REUSEADDR SO_REUSEPORT SO_BROADCAST );
 
-my $sock;
+{
+   my $sock = IO::Socket::IP->new(
+      LocalHost => "127.0.0.1",
+      Proto     => "tcp",
+      ReuseAddr => 1,
+   ) or die "Cannot socket() - $!";
 
-$sock = IO::Socket::IP->new(
-   LocalHost => "127.0.0.1",
-   Proto     => "tcp",
-   ReuseAddr => 1,
-) or die "Cannot socket() - $!";
-
-ok( $sock->getsockopt( SOL_SOCKET, SO_REUSEADDR ), 'SO_REUSEADDR set' );
+   ok( $sock->getsockopt( SOL_SOCKET, SO_REUSEADDR ), 'SO_REUSEADDR set' );
+}
 
 SKIP: {
    # Some OSes don't implement SO_REUSEPORT
    skip "No SO_REUSEPORT", 1 unless defined eval { SO_REUSEPORT };
 
-   $sock = IO::Socket::IP->new(
+   my $sock = IO::Socket::IP->new(
       LocalHost => "127.0.0.1",
       Proto     => "tcp",
       ReusePort => 1,
@@ -30,10 +30,12 @@ SKIP: {
    ok( $sock->getsockopt( SOL_SOCKET, SO_REUSEPORT ), 'SO_REUSEPORT set' );
 }
 
-$sock = IO::Socket::IP->new(
-   LocalHost => "127.0.0.1",
-   Proto     => "udp",
-   Broadcast => 1,
-) or die "Cannot socket() - $!";
+{
+   my $sock = IO::Socket::IP->new(
+      LocalHost => "127.0.0.1",
+      Proto     => "udp",
+      Broadcast => 1,
+   ) or die "Cannot socket() - $!";
 
-ok( $sock->getsockopt( SOL_SOCKET, SO_BROADCAST ), 'SO_BROADCAST set' );
+   ok( $sock->getsockopt( SOL_SOCKET, SO_BROADCAST ), 'SO_BROADCAST set' );
+}

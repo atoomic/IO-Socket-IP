@@ -7,15 +7,17 @@ use Test::More;
 # module does not require it to be installed.
 # TODO: See if we can do this using only Socket6
 
-eval { require IO::Socket::INET6 } or
-   plan skip_all => "No IO::Socket::INET6";
-eval { require Socket6 } or
-   plan skip_all => "No Socket6";
-
-plan tests => 16;
-
 use IO::Socket::IP;
 use Socket;
+
+my $AF_INET6 = eval { require Socket  and Socket::AF_INET6()  } ||
+               eval { require Socket6 and Socket6::AF_INET6() } or
+   plan skip_all => "No AF_INET6";
+
+eval { require IO::Socket::INET6 } or
+   plan skip_all => "No IO::Socket::INET6";
+
+plan tests => 16;
 
 foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    my $testserver = IO::Socket::INET6->new(
@@ -35,8 +37,8 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
 
    ok( defined $socket, "IO::Socket::IP->new constructs a $socktype socket" );
 
-   is( $socket->sockdomain, Socket6::AF_INET6(), "\$socket->sockdomain for $socktype" );
-   is( $socket->socktype,   Socket->$socktype,   "\$socket->socktype for $socktype" );
+   is( $socket->sockdomain, $AF_INET6,         "\$socket->sockdomain for $socktype" );
+   is( $socket->socktype,   Socket->$socktype, "\$socket->socktype for $socktype" );
 
    my $testclient = ( $socktype eq "SOCK_STREAM" ) ? 
       $testserver->accept : 

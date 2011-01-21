@@ -1,5 +1,10 @@
 Revision history for IO-Socket-IP
 
+0.06_001 CHANGES:
+         * Prepare for Socket::getaddrinfo() in core; prefer it to
+           Socket::GetAddrInfo::getaddrinfo()
+         * Implement Family constructor arg
+
 0.06    CHANGES:
          * Implement nonblocking connect
          * Implement LocalAddrInfo and PeerAddrInfo args

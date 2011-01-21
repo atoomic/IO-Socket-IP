@@ -7,7 +7,10 @@ use IO::Socket::IP;
 
 use IO::Socket::INET;
 use Socket qw( SOCK_STREAM unpack_sockaddr_in );
-use Socket::GetAddrInfo qw( :newapi getaddrinfo );
+
+eval { Socket->import(qw( getaddrinfo )) } or
+   eval { require Socket::GetAddrInfo;
+          Socket::GetAddrInfo->import(qw( :newapi getaddrinfo )) };
 
 {
    my $testserver = IO::Socket::INET->new(

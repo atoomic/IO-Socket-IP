@@ -6,7 +6,6 @@ WriteMakefile
           'VERSION_FROM' => 'lib/IO/Socket/IP.pm',
           'PREREQ_PM' => {
                            'IO::Socket' => 0,
-                           'Socket::GetAddrInfo' => '0.17',
                            'Test::More' => 0
                          },
           'INSTALLDIRS' => 'site',

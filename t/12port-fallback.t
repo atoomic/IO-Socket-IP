@@ -3,24 +3,19 @@
 use strict;
 use Test::More tests => 1;
 
+use IO::Socket::IP;
+use Socket qw( PF_INET SOCK_STREAM IPPROTO_TCP pack_sockaddr_in INADDR_ANY );
+
 my @gai_args;
 my @gai_rets;
 
-use Socket::GetAddrInfo;
-BEGIN {
-   my $orig_gai = \&Socket::GetAddrInfo::getaddrinfo;
+no strict 'refs';
+no warnings 'redefine';
 
-   no strict 'refs';
-   no warnings 'redefine';
-
-   *{"Socket::GetAddrInfo::getaddrinfo"} = sub {
-      push @gai_args, [ @_ ];
-      return @{ shift @gai_rets };
-   }
-}
-
-use IO::Socket::IP;
-use Socket qw( PF_INET SOCK_STREAM IPPROTO_TCP pack_sockaddr_in INADDR_ANY );
+*{"IO::Socket::IP::getaddrinfo"} = sub {
+   push @gai_args, [ @_ ];
+   return @{ shift @gai_rets };
+};
 
 @gai_rets = (
    [ "Service unknown" ],

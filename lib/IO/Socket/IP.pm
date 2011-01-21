@@ -1,7 +1,7 @@
 #  You may distribute under the terms of either the GNU General Public License
 #  or the Artistic License (the same terms as Perl itself)
 #
-#  (C) Paul Evans, 2010 -- leonerd@leonerd.org.uk
+#  (C) Paul Evans, 2010-2011 -- leonerd@leonerd.org.uk
 
 package IO::Socket::IP;
 
@@ -9,16 +9,28 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.06';
+our $VERSION = '0.06_001';
 
 use Carp;
 
-use Socket::GetAddrInfo qw(
-   :newapi getaddrinfo getnameinfo
+BEGIN {
+   # Perl 5.13.9 or above has Socket::getaddrinfo support in core.
+   # Before that we need to use Socket::GetAddrInfo
+   my @imports = qw(
+      getaddrinfo getnameinfo
+      NI_NUMERICHOST NI_NUMERICSERV
+      NI_DGRAM
+   );
 
-   NI_NUMERICHOST NI_NUMERICSERV
-   NI_DGRAM
-);
+   if( require Socket and defined &Socket::getaddrinfo ) {
+      Socket->import( @imports );
+   }
+   else {
+      require Socket::GetAddrInfo;
+      Socket::GetAddrInfo->import( ':newapi', @imports );
+   }
+}
+
 use Socket qw(
    SOCK_DGRAM
    SOL_SOCKET
@@ -97,6 +109,11 @@ configured to contain a newly created socket handle, and be configured
 according to the argmuents. The recognised arguments are:
 
 =over 8
+
+=item Family => INT
+
+The socket family (e.g. C<AF_INET>, C<AF_INET6>). Will be left unspecified if
+not supplied.
 
 =item Type => INT
 
@@ -248,6 +265,11 @@ sub configure
    my @peerinfos;
 
    my @sockopts_enabled;
+
+   if( defined $arg->{Family} ) {
+      my $family = delete $arg->{Family};
+      $hints{family} = $family;
+   }
 
    if( defined $arg->{Type} ) {
       my $type = delete $arg->{Type};
@@ -639,9 +661,7 @@ double-lookup overhead in such code as
 
 =item *
 
-Implement constructor args C<Timeout> and maybe C<Domain>. Except that
-C<Domain> is harder because L<IO::Socket> wants to dispatch to subclasses
-based on it. Maybe C<Family> might be a better name?
+Implement C<Timeout> constructor arg.
 
 =item *
 

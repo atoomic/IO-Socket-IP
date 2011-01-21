@@ -36,6 +36,10 @@ CONSTRUCTOR
     will be configured to contain a newly created socket handle, and be
     configured according to the argmuents. The recognised arguments are:
 
+    Family => INT
+            The socket family (e.g. "AF_INET", "AF_INET6"). Will be left
+            unspecified if not supplied.
+
     Type => INT
             The socket type (e.g. "SOCK_STREAM", "SOCK_DGRAM"). Will be
             inferred by "getaddrinfo" from the service name if not supplied.
@@ -232,9 +236,7 @@ TODO
 
               printf "Peer is %s:%d\n", $sock->peerhost, $sock->peerport;
 
-    *       Implement constructor args "Timeout" and maybe "Domain". Except
-            that "Domain" is harder because IO::Socket wants to dispatch to
-            subclasses based on it. Maybe "Family" might be a better name?
+    *       Implement "Timeout" constructor arg.
 
     *       Investigate whether "POSIX::dup2" upsets BSD's "kqueue"
             watchers, and if so, consider what possible workarounds might be
