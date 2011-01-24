@@ -1,5 +1,10 @@
 Revision history for IO-Socket-IP
 
+0.06_002 CHANGES:
+         * Bugfix to dual Socket or Socket::GetAddrInfo dependency
+         * Optional registration with IO::Socket
+         * Documentation rewordings
+
 0.06_001 CHANGES:
          * Prepare for Socket::getaddrinfo() in core; prefer it to
            Socket::GetAddrInfo::getaddrinfo()

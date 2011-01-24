@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.06_001';
+our $VERSION = '0.06_002';
 
 use Carp;
 
@@ -65,65 +65,97 @@ my $IPv6_re = do {
 
 =head1 NAME
 
-C<IO::Socket::IP> - Use IPv4 and IPv6 sockets in a protocol-independent way
+C<IO::Socket::IP> - A drop-in replacement for C<IO::Socket::INET> supporting
+both IPv4 and IPv6
 
 =head1 SYNOPSIS
 
  use IO::Socket::IP;
 
  my $sock = IO::Socket::IP->new(
-    PeerHost    => "www.google.com",
-    PeerService => "www",
+    PeerHost => "www.google.com",
+    PeerPort => "http",
+    Type     => SOCK_STREAM,
  ) or die "Cannot construct socket - $@";
 
- printf "Now connected to %s:%s\n", $sock->peerhost_service;
+ my $familyname = ( $sock->sockdomain == AF_INET6 ) ? "IPv6" :
+                  ( $sock->sockdomain == AF_INET  ) ? "IPv4" :
+                                                      "unknown";
 
- ...
+ printf "Connected to google via %s\n", $familyname;
 
 =head1 DESCRIPTION
 
-This module provides a protocol-independent way to use IPv4 and IPv6 sockets.
-It allows new connections to be made by specifying the hostname and service
-name or port number. It allows for connections to be accepted by sockets
-listening on local ports, by service name or port number.
+This module provides a protocol-independent way to use IPv4 and IPv6 sockets,
+as a drop-in replacement for L<IO::Socket::INET>. Most constructor arguments
+and methods are provided in a backward-compatible way. For a list of known
+differences, see the C<IO::Socket::INET> INCOMPATIBILITES section below.
 
-It uses L<Socket::GetAddrInfo>'s C<getaddrinfo> function to convert
-hostname/service name pairs into sets of possible addresses to connect to.
+It uses the C<getaddrinfo(3)> function to convert hostnames and service names
+or port numbers into sets of possible addresses to connect to or listen on.
 This allows it to work for IPv6 where the system supports it, while still
 falling back to IPv4-only on systems which don't.
 
-It provides an API which, for most typical cases, should be a drop-in
-replacement for L<IO::Socket::INET>; most constructor arguments and methods
-are provided in a compatible way.
+=head1 REPLACING C<IO::Socket> DEFAULT BEHAVIOUR
+
+By placing C<-register> in the import list, C<IO::Socket> uses
+C<IO::Socket::IP> rather than C<IO::Socket::INET> as the class that handles
+C<AF_INET>.  C<IO::Socket> will also use C<IO::Socket::IP> rather than
+C<IO::Socket::INET6> to handle C<AF_INET6>, provided that the C<AF_INET6>
+constant is available.
+
+Changing C<IO::Socket>'s default behaviour means that calling the
+C<IO::Socket> constructor with either C<AF_INET> or C<AF_INET6> as the
+C<Domain> parameter will yield an C<IO::Socket::IP> object.
+
+ use IO::Socket::IP -register;
+
+ my $sock = IO::Socket->new(
+    Domain    => AF_INET6,
+    LocalHost => "::1",
+    Listen    => 1,
+ ) or die "Cannot create socket - $@\n";
+
+ print "Created a socket of type " . ref($sock) . "\n";
+
+Note that C<-register> is a global setting that applies to the entire program;
+it cannot be applied only for certain callers, removed, or limited by lexical
+scope.
 
 =cut
 
-=head1 CONSTRUCTOR
+sub import
+{
+   my $pkg = shift;
+   my @symbols;
+
+   foreach ( @_ ) {
+      if( $_ eq "-register" ) {
+         $pkg->register_domain( Socket::AF_INET() );
+
+         my $AF_INET6 = eval { Socket::AF_INET6() } ||
+                        eval { require Socket6; Socket6::AF_INET6() };
+         $pkg->register_domain( $AF_INET6 ) if defined $AF_INET6;
+      }
+      else {
+         push @symbols, $_;
+      }
+   }
+   
+   @_ = ( $pkg, @symbols );
+   goto &IO::Socket::import;
+}
+
+=head1 CONSTRUCTORS
 
 =cut
 
 =head2 $sock = IO::Socket::IP->new( %args )
 
-Creates a new C<IO::Socket::IP> object. If any arguments are passed it will be
-configured to contain a newly created socket handle, and be configured
-according to the argmuents. The recognised arguments are:
+Creates a new C<IO::Socket::IP> object, containing a newly created socket
+handle according to the named arguments passed. The recognised arguments are:
 
 =over 8
-
-=item Family => INT
-
-The socket family (e.g. C<AF_INET>, C<AF_INET6>). Will be left unspecified if
-not supplied.
-
-=item Type => INT
-
-The socket type (e.g. C<SOCK_STREAM>, C<SOCK_DGRAM>). Will be inferred by 
-C<getaddrinfo> from the service name if not supplied.
-
-=item Proto => INT
-
-IP protocol for the socket connection. Will be inferred by C<getaddrinfo> from
-the service name, or by the kernel from the socket type, if not supplied.
 
 =item PeerHost => STRING
 
@@ -132,22 +164,21 @@ the service name, or by the kernel from the socket type, if not supplied.
 Hostname and service name for the peer to C<connect()> to. The service name
 may be given as a port number, as a decimal string.
 
+=item PeerAddr => STRING
+
+=item PeerPort => STRING
+
 For symmetry with the accessor methods and compatibility with
-C<IO::Socket::INET>, C<PeerAddr> and C<PeerPort> are accepted as synonyms
-respectively.
+C<IO::Socket::INET>, these are accepted as synonyms for C<PeerHost> and
+C<PeerService> respectively.
 
 =item PeerAddrInfo => ARRAY
 
 Alternate form of specifying the peer to C<connect()> to. This should be an
 array of the form returned by C<Socket::GetAddrInfo::getaddrinfo>.
 
-This parameter overrides C<PeerHost> and C<PeerService>, and will ignore any
-values given for C<Type> or C<Proto>.
-
-=item Listen => INT
-
-Puts the socket into listening mode where new connections can be accepted
-using the C<accept> method.
+This parameter takes precedence over the C<Peer*>, C<Family>, C<Type> and
+C<Proto> arguments.
 
 =item LocalHost => STRING
 
@@ -155,17 +186,45 @@ using the C<accept> method.
 
 Hostname and service name for the local address to C<bind()> to.
 
+=item LocalAddr => STRING
+
+=item LocalPort => STRING
+
 For symmetry with the accessor methods and compatibility with
-C<IO::Socket::INET>, C<LocalAddr> and C<LocalPort> are accepted as synonyms
-respectively.
+C<IO::Socket::INET>, these are accepted as synonyms for C<LocalHost> and
+C<LocalService> respectively.
 
 =item LocalAddrInfo => ARRAY
 
 Alternate form of specifying the local address to C<bind()> to. This should be
 an array of the form returned by C<Socket::GetAddrInfo::getaddrinfo>.
 
-This parameter overrides C<LocalHost> and C<LocalService>, and will ignore any
-values given for C<Type> or C<Proto>.
+This parameter takes precedence over the C<Local*>, C<Family>, C<Type> and
+C<Proto> arguments.
+
+=item Family => INT
+
+The socket family to pass to C<getaddrinfo> (e.g. C<AF_INET>, C<AF_INET6>).
+Normally this will be left undefined, and C<getaddrinfo> will search using any
+family supported by the system.
+
+=item Type => INT
+
+The socket type to pass to C<getaddrinfo> (e.g. C<SOCK_STREAM>,
+C<SOCK_DGRAM>). Normally defined by the caller; if left undefined
+C<getaddrinfo> may attempt to infer the type from the service name.
+
+=item Proto => INT
+
+The IP protocol to use for the socket (e.g. C<IPPROTO_TCP>, C<IPPROTO_UDP>).
+Normally this will be left undefined, and either C<getaddrinfo> or the kernel
+will choose an appropriate value.
+
+=item Listen => INT
+
+If defined, puts the socket into listening mode where new connections can be
+accepted using the C<accept> method. The value given is used as the
+C<listen(2)> queue size.
 
 =item ReuseAddr => BOOL
 
@@ -179,10 +238,22 @@ If true, set the C<SO_REUSEPORT> sockopt (not all OSes implement this sockopt)
 
 If true, set the C<SO_BROADCAST> sockopt
 
+=item Timeout
+
+This C<IO::Socket::INET>-style argument is not currently supported. See the
+C<IO::Socket::INET> INCOMPATIBILITES section below.
+
+=item MultiHomed
+
+This C<IO::Socket::INET>-style argument is not currently supported. See the
+C<IO::Socket::INET> INCOMPATIBILITES section below. However, the behaviour it
+enables is always performed by C<IO::Socket::IP>.
+
 =item Blocking => BOOL
 
-If false, the socket will be set to nonblocking mode. If absent or true it
-will be in blocking mode. See C<NON-BLOCKING> below for more detail.
+If defined but false, the socket will be set to non-blocking mode. Otherwise
+it will default to blocking mode. See the NON-BLOCKING section below for more
+detail.
 
 =back
 
@@ -190,35 +261,12 @@ If the constructor fails, it will set C<$@> to an appropriate error message;
 this may be from C<$!> or it may be some other string; not every failure
 necessarily has an associated C<errno> value.
 
-If either C<LocalHost> or C<PeerHost> (or their C<...Addr> synonyms) have any
-of the following special forms, they are split to imply both the hostname and
-service name:
-
- hostname.example.org:port    # DNS name
- 10.0.0.1:port                # IPv4 address
- [fe80::123]:port             # IPv6 address
-
-In each case, C<port> is passed to the C<LocalService> or C<PeerService>
-argument.
-
-Either of C<LocalService> or C<PeerService> (or their C<...Port> synonyms) can
-be either a service name, a decimal number, or a string containing both a
-service name and number, in the form
-
- name(number)
-
-In this case, the name will be tried first, but if the resolver does not
-understand it then the port number will be used instead.
-
 =head2 $sock = IO::Socket::IP->new( $peeraddr )
 
 As a special case, if the constructor is passed a single argument (as
 opposed to an even-sized list of key/value pairs), it is taken to be the value
-of the C<PeerAddr> parameter. The example in the SYNOPSIS section may also
-therefore be written as
-
- my $sock = IO::Socket::IP->new( "www.google.com:www" )
-    or die "Cannot construct socket - $@";
+of the C<PeerAddr> parameter. This is parsed in the same way, according to the
+behaviour given in the C<PeerHost> AND C<LocalHost> PARSING section below.
 
 =cut
 
@@ -226,36 +274,46 @@ sub new
 {
    my $class = shift;
    my %arg = (@_ == 1) ? (PeerHost => $_[0]) : @_;
+   return $class->SUPER::new(%arg);
+}
 
-   $arg{PeerHost} = delete $arg{PeerAddr}
-      if exists $arg{PeerAddr} && !exists $arg{PeerHost};
+# IO::Socket may call this one; neaten up the arguments from IO::Socket::INET
+# before calling our real _configure method
+sub configure
+{
+   my $self = shift;
+   my ( $arg ) = @_;
 
-   $arg{PeerService} = delete $arg{PeerPort}
-      if exists $arg{PeerPort} && !exists $arg{PeerService};
+   $arg->{PeerHost} = delete $arg->{PeerAddr}
+      if exists $arg->{PeerAddr} && !exists $arg->{PeerHost};
 
-   $arg{LocalHost} = delete $arg{LocalAddr}
-      if exists $arg{LocalAddr} && !exists $arg{LocalHost};
+   $arg->{PeerService} = delete $arg->{PeerPort}
+      if exists $arg->{PeerPort} && !exists $arg->{PeerService};
 
-   $arg{LocalService} = delete $arg{LocalPort}
-      if exists $arg{LocalPort} && !exists $arg{LocalService};
+   $arg->{LocalHost} = delete $arg->{LocalAddr}
+      if exists $arg->{LocalAddr} && !exists $arg->{LocalHost};
+
+   $arg->{LocalService} = delete $arg->{LocalPort}
+      if exists $arg->{LocalPort} && !exists $arg->{LocalService};
 
    for my $type (qw(Peer Local)) {
       my $host    = $type . 'Host';
       my $service = $type . 'Service';
 
-      if (exists $arg{$host} && !exists $arg{$service}) {
-         local $_ = $arg{$host};
+      if (exists $arg->{$host} && !exists $arg->{$service}) {
+         local $_ = $arg->{$host};
          defined or next;
          if (/\A\[($IPv6_re)\](?::([^\s:]*))?\z/o || /\A([^\s:]*):([^\s:]*)\z/) {
-            $arg{$host}    = $1;
-            $arg{$service} = $2 if defined $2 && length $2;
+            $arg->{$host}    = $1;
+            $arg->{$service} = $2 if defined $2 && length $2;
          }
       }
    }
-   return $class->SUPER::new(%arg);
+
+   $self->_configure( $arg );
 }
 
-sub configure
+sub _configure
 {
    my $self = shift;
    my ( $arg ) = @_;
@@ -458,6 +516,9 @@ sub connect
 
 =head1 METHODS
 
+As well as the following methods, this class inherits all the methods in
+L<IO::Socket> and L<IO::Handle>.
+
 =cut
 
 sub _get_host_service
@@ -478,15 +539,16 @@ sub _get_host_service
 
 =head2 ( $host, $service ) = $sock->sockhost_service( $numeric )
 
-Return the hostname and service name for the local endpoint (that is, the
+Returns the hostname and service name of the local address (that is, the
 socket address given by the C<sockname> method).
 
 If C<$numeric> is true, these will be given in numeric form rather than being
 resolved into names.
 
-This method is used to implement the following for convenience wrappers. If
-both host and service names are required, this method is preferrable to the
-following wrappers, because it will call C<getnameinfo(3)> only once.
+The following four convenience wrappers may be used to obtain one of the two
+values returned here. If both host and service names are required, this method
+is preferrable to the following wrappers, because it will call
+C<getnameinfo(3)> only once.
 
 =cut
 
@@ -524,9 +586,14 @@ sub sockservice  { ( shift->sockhost_service(0) )[1] }
 
 =head2 ( $host, $service ) = $sock->peerhost_service( $numeric )
 
-Similar to the C<sockhost_service> method, but instead returns the hostname
-and service name for the peer endpoint (that is, the socket address given by
-the C<peername> method).
+Returns the hostname and service name of the peer address (that is, the
+socket address given by the C<peername> method), similar to the
+C<sockhost_service> method.
+
+The following four convenience wrappers may be used to obtain one of the two
+values returned here. If both host and service names are required, this method
+is preferrable to the following wrappers, because it will call
+C<getnameinfo(3)> only once.
 
 =cut
 
@@ -596,29 +663,44 @@ __END__
 
 =head1 NON-BLOCKING
 
-If the constructor is passed a false value for the C<Blocking> argument, then
-the socket is put into nonblocking mode. When in nonblocking mode, an actual
-C<connect> operation will not have been completed by the time the constructor
-returns, because this may block.
+If the constructor is passed a defined but false value for the C<Blocking>
+argument then the socket is put into non-blocking mode. When in non-blocking
+mode, the socket will not be set up by the time the constructor returns,
+because the underlying C<connect(2)> syscall would otherwise have to block.
 
-In order to use this mode, the caller should poll for writeability on the
-filehandle, each time it indicates write-readiness, the user code should call
-the C<connect> method, with no arguments. Once the socket has been connected
-to the peer, C<connect> will return true. If it returns false, the value of
-C<$!> indicates whether it should be tried again (C<EINPROGRESS>), or whether
-a permanent error has occured. This API is an extension of the
-C<IO::Socket::INET> API, unique to C<IO::Socket::IP>, because the former does
-not support multi-homed nonblocking connect.
+The non-blocking behaviour is an extension of the C<IO::Socket::INET> API,
+unique to C<IO::Socket::IP>, because the former does not support multi-homed
+non-blocking connect.
+
+When using non-blocking mode, the caller must repeatedly check for
+writeability on the filehandle (for instance using C<select> or C<IO::Poll>).
+Each time the filehandle is ready to write, the C<connect> method must be
+called, with no arguments.
+
+While C<connect> returns false, the value of C<$!> indicates whether it should
+be tried again (by being set to the value C<EINPROGRESS>), or whether a
+permanent error has occured (e.g. C<ECONNREFUSED>).
+
+Once the socket has been connected to the peer, C<connect> will return true
+and the socket will now be ready to use.
+
+Note that calls to the platform's underlying C<getaddrinfo(3)> function may
+block. If C<IO::Socket::IP> has to perform this lookup, the constructor will
+block even when in non-blocking mode.
+
+To avoid this blocking behaviour, the caller should pass in the result of such
+a lookup using the C<PeerAddrInfo> or C<LocalAddrInfo> arguments. This can be
+achieved by using L<Net::LibAsyncNS>, or the C<getaddrinfo(3)> function can be
+called in a child process.
 
  use IO::Socket::IP;
  use Errno qw( EINPROGRESS );
- use Socket qw( SOCK_STREAM );
+
+ my @peeraddrinfo = ... # Caller must obtain the getaddinfo result here
 
  my $socket = IO::Socket::IP->new(
-    PeerHost    => "192.168.1.1",
-    PeerService => "25",
-    Type        => SOCK_STREAM,
-    Blocking    => 0,
+    PeerAddrInfo => \@peeraddrinfo,
+    Blocking     => 0,
  ) or die "Cannot construct socket - $@";
 
  while( !$socket->connect and $! == EINPROGRESS ) {
@@ -632,25 +714,64 @@ not support multi-homed nonblocking connect.
 
  ...
 
-This example uses C<select()>, but any similar mechanism should work
+The example above uses C<select()>, but any similar mechanism should work
 analogously. C<IO::Socket::IP> takes care when creating new socket filehandles
 to preserve the actual file descriptor number, so such techniques as C<poll>
 or C<epoll> should be transparent to its reallocation of a different socket
 underneath, perhaps in order to switch protocol family between C<PF_INET> and
 C<PF_INET6>.
 
-When performing a non-blocking connect, it may be preferred to use the
-alternative C<LocalAddrInfo> and C<PeerAddrInfo> arguments. These allow the
-caller to perform the C<getaddrinfo> calls required, because if
-C<IO::Socket::IP> makes them they will definitely block. These arguments are
-provided for the case where the caller already has the C<getaddrinfo> results,
-perhaps obtained by some non-blocking method like L<Net::LibAsyncNS>, or by
-performing the lookup in a child process and passing the results back to the
-main process in an event loop of some kind.
+For another example using C<IO::Poll> and C<Net::LibAsyncNS>, see the
+F<examples/nonblocking_libasyncns.pl> file in the module distribution.
+
+=head1 C<PeerHost> AND C<LocalHost> PARSING
+
+To support the C<IO::Socket::INET> API, the host and port information may be
+passed in a single string rather than as two separate arguments.
+
+If either C<LocalHost> or C<PeerHost> (or their C<...Addr> synonyms) have any
+of the following special forms, and C<LocalService> or C<PeerService> (or
+their C<...Port> synonyms) are absent, special parsing is applied.
+
+The value of the C<...Host> argument will be split to give both the hostname
+and port (or service name):
+
+ hostname.example.org:http    # Host name
+ 10.0.0.1:80                  # IPv4 address
+ [fe80::123]:443              # IPv6 address
+
+In each case, the port or service name (e.g. C<80>) is passed as the
+C<LocalService> or C<PeerService> argument.
+
+Either of C<LocalService> or C<PeerService> (or their C<...Port> synonyms) can
+be either a service name, a decimal number, or a string containing both a
+service name and number, in a form such as
+
+ http(80)
+
+In this case, the name (C<http>) will be tried first, but if the resolver does
+not understand it then the port number (C<80>) will be used instead.
+
+=head1 C<IO::Socket::INET> INCOMPATIBILITES
+
+=over 4
+
+=item *
+
+The C<Timeout> and C<MultiHomed> constructor arguments are currently not
+recognised.
+
+The behaviour enabled by C<MultiHomed> is in fact implemented by
+C<IO::Socket::IP> as it is required to correctly support searching for a
+useable address from the results of the C<getaddrinfo(3)> call.
+
+=back
+
+=cut
 
 =head1 TODO
 
-=over 8
+=over 4
 
 =item *
 
@@ -661,10 +782,6 @@ double-lookup overhead in such code as
 
 =item *
 
-Implement C<Timeout> constructor arg.
-
-=item *
-
 Investigate whether C<POSIX::dup2> upsets BSD's C<kqueue> watchers, and if so,
 consider what possible workarounds might be applied.
 
@@ -672,7 +789,7 @@ consider what possible workarounds might be applied.
 
 =head1 BUGS
 
-=over 8
+=over 4
 
 =item *
 

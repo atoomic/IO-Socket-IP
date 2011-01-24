@@ -17,7 +17,7 @@ sub arguments_is {
       no warnings 'redefine';
       my $args;
 
-      local *IO::Socket::IP::configure = sub {
+      local *IO::Socket::IP::_configure = sub {
          $args = $_[1];
          return $_[0];
       };

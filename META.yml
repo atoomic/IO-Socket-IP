@@ -1,5 +1,5 @@
 ---
-abstract: 'Use IPv4 and IPv6 sockets in a protocol-independent way'
+abstract: "A drop-in replacement for C<IO::Socket::INET> supporting\nboth IPv4 and IPv6"
 author:
   - 'Paul Evans <leonerd@leonerd.org.uk>'
 build_requires:
@@ -15,9 +15,10 @@ name: IO-Socket-IP
 provides:
   IO::Socket::IP:
     file: lib/IO/Socket/IP.pm
-    version: 0.06_001
+    version: 0.06_002
 requires:
   IO::Socket: 0
+  Socket::GetAddrInfo: 0.17
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.06_001
+version: 0.06_002
