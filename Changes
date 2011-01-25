@@ -1,5 +1,8 @@
 Revision history for IO-Socket-IP
 
+0.06_003 CHANGES:
+         * Bugfix to t/04, t/05 - skip if unable to bind ::1
+
 0.06_002 CHANGES:
          * Bugfix to dual Socket or Socket::GetAddrInfo dependency
          * Optional registration with IO::Socket

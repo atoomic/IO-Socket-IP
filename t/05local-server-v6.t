@@ -17,6 +17,9 @@ my $AF_INET6 = eval { require Socket  and Socket::AF_INET6()  } ||
 eval { require IO::Socket::INET6 } or
    plan skip_all => "No IO::Socket::INET6";
 
+eval { IO::Socket::IP->new( LocalHost => "::1" ) } or
+   plan skip_all => "Unable to bind to ::1";
+
 plan tests => 26;
 
 foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
