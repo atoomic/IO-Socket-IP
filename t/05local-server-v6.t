@@ -34,8 +34,6 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    is( $testserver->sockdomain, $AF_INET6,         "\$testserver->sockdomain for $socktype" );
    is( $testserver->socktype,   Socket->$socktype, "\$testserver->socktype for $socktype" );
 
-   $testserver->blocking( 0 );
-
    is( $testserver->sockhost, "::1",       "\$testserver->sockhost for $socktype" );
    like( $testserver->sockport, qr/^\d+$/, "\$testserver->sockport for $socktype" );
 

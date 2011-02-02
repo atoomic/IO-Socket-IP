@@ -12,8 +12,6 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
       Type      => Socket->$socktype,
    );
 
-   $testserver->blocking( 0 );
-
    my $socket = IO::Socket::IP->new(
       PeerHost    => "127.0.0.1",
       PeerService => $testserver->sockport,

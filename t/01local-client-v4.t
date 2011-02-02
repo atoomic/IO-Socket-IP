@@ -16,8 +16,6 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
       Proto     => ( $socktype eq "SOCK_STREAM" ? "tcp" : "udp" ), # Because IO::Socket::INET is stupid and always presumes tcp
    ) or die "Cannot listen on PF_INET - $!";
 
-   $testserver->blocking( 0 );
-
    my $socket = IO::Socket::IP->new(
       PeerHost    => "127.0.0.1",
       PeerService => $testserver->sockport,

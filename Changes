@@ -1,5 +1,9 @@
 Revision history for IO-Socket-IP
 
+0.06_004 CHANGES:
+         * Bugfix to local socket connect tests - test using blocking rather
+           than nonblocking sockets to guarantee synchronous packet delivery
+
 0.06_003 CHANGES:
          * Bugfix to t/04, t/05 - skip if unable to bind ::1
 
