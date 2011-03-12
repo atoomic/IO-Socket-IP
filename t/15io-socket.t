@@ -8,6 +8,7 @@ use IO::Socket::IP -register;
 
 my $sock = IO::Socket->new(
    Domain    => AF_INET,
+   Type      => SOCK_STREAM,
    LocalHost => "127.0.0.1",
    LocalPort => 0,
 );
@@ -21,6 +22,7 @@ SKIP: {
 
    my $sock = IO::Socket->new(
       Domain    => $AF_INET6,
+      Type      => SOCK_STREAM,
       LocalHost => "::1",
       LocalPort => 0,
    );

@@ -109,10 +109,12 @@ CONSTRUCTORS
             "getaddrinfo" may attempt to infer the type from the service
             name.
 
-    Proto => INT
-            The IP protocol to use for the socket (e.g. "IPPROTO_TCP",
-            "IPPROTO_UDP"). Normally this will be left undefined, and either
-            "getaddrinfo" or the kernel will choose an appropriate value.
+    Proto => STRING or INT
+            The IP protocol to use for the socket (e.g. 'tcp',
+            "IPPROTO_TCP", 'udp',"IPPROTO_UDP"). Normally this will be left
+            undefined, and either "getaddrinfo" or the kernel will choose an
+            appropriate value. May be given either in string name or numeric
+            form.
 
     Listen => INT
             If defined, puts the socket into listening mode where new
@@ -143,6 +145,10 @@ CONSTRUCTORS
             If defined but false, the socket will be set to non-blocking
             mode. Otherwise it will default to blocking mode. See the
             NON-BLOCKING section below for more detail.
+
+    If neither "Type" nor "Proto" hints are provided, a default of
+    "SOCK_STREAM" and "IPPROTO_TCP" respectively will be set, to maintain
+    compatibilty with "IO::Socket::INET".
 
     If the constructor fails, it will set $@ to an appropriate error
     message; this may be from $! or it may be some other string; not every

@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.06_004';
+our $VERSION = '0.06_005';
 
 use Carp;
 
@@ -18,6 +18,7 @@ BEGIN {
    # Before that we need to use Socket::GetAddrInfo
    my @imports = qw(
       getaddrinfo getnameinfo
+      AI_PASSIVE
       NI_NUMERICHOST NI_NUMERICSERV
       NI_DGRAM
    );
@@ -32,7 +33,7 @@ BEGIN {
 }
 
 use Socket qw(
-   SOCK_DGRAM
+   SOCK_DGRAM SOCK_STREAM IPPROTO_TCP
    SOL_SOCKET
    SO_REUSEADDR SO_REUSEPORT SO_BROADCAST SO_ERROR
 );
@@ -214,11 +215,12 @@ The socket type to pass to C<getaddrinfo> (e.g. C<SOCK_STREAM>,
 C<SOCK_DGRAM>). Normally defined by the caller; if left undefined
 C<getaddrinfo> may attempt to infer the type from the service name.
 
-=item Proto => INT
+=item Proto => STRING or INT
 
-The IP protocol to use for the socket (e.g. C<IPPROTO_TCP>, C<IPPROTO_UDP>).
-Normally this will be left undefined, and either C<getaddrinfo> or the kernel
-will choose an appropriate value.
+The IP protocol to use for the socket (e.g. C<'tcp'>, C<IPPROTO_TCP>,
+C<'udp'>,C<IPPROTO_UDP>). Normally this will be left undefined, and either
+C<getaddrinfo> or the kernel will choose an appropriate value. May be given
+either in string name or numeric form.
 
 =item Listen => INT
 
@@ -256,6 +258,10 @@ it will default to blocking mode. See the NON-BLOCKING section below for more
 detail.
 
 =back
+
+If neither C<Type> nor C<Proto> hints are provided, a default of
+C<SOCK_STREAM> and C<IPPROTO_TCP> respectively will be set, to maintain
+compatibilty with C<IO::Socket::INET>.
 
 If the constructor fails, it will set C<$@> to an appropriate error message;
 this may be from C<$!> or it may be some other string; not every failure
@@ -346,6 +352,13 @@ sub _configure
       $hints{protocol} = $proto;
    }
 
+   # To maintain compatibilty with IO::Socket::INET, imply a default of
+   # SOCK_STREAM + IPPROTO_TCP if neither hint is given
+   if( !defined $hints{socktype} and !defined $hints{protocol} ) {
+      $hints{socktype} = SOCK_STREAM;
+      $hints{protocol} = IPPROTO_TCP;
+   }
+
    if( my $info = delete $arg->{LocalAddrInfo} ) {
       @localinfos = @$info;
    }
@@ -357,10 +370,12 @@ sub _configure
       defined $service and $service =~ s/\((\d+)\)$// and
          my $fallback_port = $1;
 
-      ( my $err, @localinfos ) = getaddrinfo( $host, $service, \%hints );
+      my %localhints = %hints;
+      $localhints{flags} |= AI_PASSIVE;
+      ( my $err, @localinfos ) = getaddrinfo( $host, $service, \%localhints );
 
       if( $err and defined $fallback_port ) {
-         ( $err, @localinfos ) = getaddrinfo( $host, $fallback_port, \%hints );
+         ( $err, @localinfos ) = getaddrinfo( $host, $fallback_port, \%localhints );
       }
 
       $err and ( $@ = "$err", return );
@@ -656,11 +671,6 @@ sub socket
    dup2( $tmph->fileno, $self->fileno ) or die "Unable to dup2 $tmph onto $self - $!";
 }
 
-# Keep perl happy; keep Britain tidy
-1;
-
-__END__
-
 =head1 NON-BLOCKING
 
 If the constructor is passed a defined but false value for the C<Blocking>
@@ -806,3 +816,7 @@ other platforms, all test OK on smoke testing.
 =head1 AUTHOR
 
 Paul Evans <leonerd@leonerd.org.uk>
+
+=cut
+
+0x55AA;
