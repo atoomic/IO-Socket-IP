@@ -1,21 +1,14 @@
 Revision history for IO-Socket-IP
 
-0.06_004 CHANGES:
-         * Bugfix to local socket connect tests - test using blocking rather
-           than nonblocking sockets to guarantee synchronous packet delivery
-
-0.06_003 CHANGES:
-         * Bugfix to t/04, t/05 - skip if unable to bind ::1
-
-0.06_002 CHANGES:
-         * Bugfix to dual Socket or Socket::GetAddrInfo dependency
-         * Optional registration with IO::Socket
-         * Documentation rewordings
-
-0.06_001 CHANGES:
+0.07    CHANGES:
          * Prepare for Socket::getaddrinfo() in core; prefer it to
            Socket::GetAddrInfo::getaddrinfo()
          * Implement Family constructor arg
+         * Optional registration with IO::Socket
+         * Documentation rewordings
+         * Bugfix to local socket connect tests - test using blocking rather
+           than nonblocking sockets to guarantee synchronous packet delivery
+         * Bugfix to t/04, t/05 - skip if unable to bind ::1
 
 0.06    CHANGES:
          * Implement nonblocking connect

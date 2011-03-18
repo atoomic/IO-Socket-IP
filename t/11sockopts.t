@@ -12,7 +12,7 @@ use Socket qw( SOL_SOCKET SO_REUSEADDR SO_REUSEPORT SO_BROADCAST );
       LocalHost => "127.0.0.1",
       Proto     => "tcp",
       ReuseAddr => 1,
-   ) or die "Cannot socket() - $!";
+   ) or die "Cannot socket() - $@";
 
    ok( $sock->getsockopt( SOL_SOCKET, SO_REUSEADDR ), 'SO_REUSEADDR set' );
 }
@@ -25,7 +25,7 @@ SKIP: {
       LocalHost => "127.0.0.1",
       Proto     => "tcp",
       ReusePort => 1,
-   ) or die "Cannot socket() - $!";
+   ) or die "Cannot socket() - $@";
 
    ok( $sock->getsockopt( SOL_SOCKET, SO_REUSEPORT ), 'SO_REUSEPORT set' );
 }
@@ -35,7 +35,7 @@ SKIP: {
       LocalHost => "127.0.0.1",
       Proto     => "udp",
       Broadcast => 1,
-   ) or die "Cannot socket() - $!";
+   ) or die "Cannot socket() - $@";
 
    ok( $sock->getsockopt( SOL_SOCKET, SO_BROADCAST ), 'SO_BROADCAST set' );
 }

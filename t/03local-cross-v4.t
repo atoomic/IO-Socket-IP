@@ -10,13 +10,13 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
       ( $socktype eq "SOCK_STREAM" ? ( Listen => 1 ) : () ),
       LocalHost => "127.0.0.1",
       Type      => Socket->$socktype,
-   );
+   ) or die "Cannot listen on PF_INET - $@";
 
    my $socket = IO::Socket::IP->new(
       PeerHost    => "127.0.0.1",
       PeerService => $testserver->sockport,
       Type        => Socket->$socktype,
-   );
+   ) or die "Cannot connect on PF_INET - $@";
 
    my $testclient = ( $socktype eq "SOCK_STREAM" ) ? 
       $testserver->accept : 

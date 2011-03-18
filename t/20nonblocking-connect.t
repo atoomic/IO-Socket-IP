@@ -12,7 +12,7 @@ my $testserver = IO::Socket::INET->new(
    Listen    => 1,
    LocalHost => "127.0.0.1",
    Type      => SOCK_STREAM,
-) or die "Cannot listen on PF_INET - $!";
+) or die "Cannot listen on PF_INET - $@";
 
 my $socket = IO::Socket::IP->new(
    PeerHost    => "127.0.0.1",
@@ -21,7 +21,8 @@ my $socket = IO::Socket::IP->new(
    Blocking    => 0,
 );
 
-ok( defined $socket, 'IO::Socket::IP->new( Blocking => 0 ) constructs a socket' );
+ok( defined $socket, 'IO::Socket::IP->new( Blocking => 0 ) constructs a socket' ) or
+   diag( "  error was $@" );
 
 while( !$socket->connect and $! == EINPROGRESS ) {
    my $wvec = '';

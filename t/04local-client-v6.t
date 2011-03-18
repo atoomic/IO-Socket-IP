@@ -28,7 +28,7 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
       LocalHost => "::1",
       Type      => Socket->$socktype,
       Proto     => ( $socktype eq "SOCK_STREAM" ? "tcp" : "udp" ), # Because IO::Socket::INET6 is stupid and always presumes tcp
-   ) or die "Cannot listen on PF_INET6 - $!";
+   ) or die "Cannot listen on PF_INET6 - $@";
 
    my $socket = IO::Socket::IP->new(
       PeerHost    => "::1",
@@ -36,7 +36,8 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
       Type        => Socket->$socktype,
    );
 
-   ok( defined $socket, "IO::Socket::IP->new constructs a $socktype socket" );
+   ok( defined $socket, "IO::Socket::IP->new constructs a $socktype socket" ) or
+      diag( "  error was $@" );
 
    is( $socket->sockdomain, $AF_INET6,         "\$socket->sockdomain for $socktype" );
    is( $socket->socktype,   Socket->$socktype, "\$socket->socktype for $socktype" );

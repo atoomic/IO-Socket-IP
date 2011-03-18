@@ -27,7 +27,8 @@ SKIP: {
       Blocking    => 0,
    );
 
-   ok( defined $socket, "defined \$socket for $test_host:$test_good_port" );
+   ok( defined $socket, "defined \$socket for $test_host:$test_good_port" ) or
+      diag( "  error was $@" );
 
    # This and test is required to placate a warning IO::Socket would otherwise
    # throw; https://rt.cpan.org/Ticket/Display.html?id=63052
@@ -64,7 +65,8 @@ SKIP: {
       Blocking    => 0,
    );
 
-   ok( defined $socket, "defined \$socket for $test_host:$test_bad_port" );
+   ok( defined $socket, "defined \$socket for $test_host:$test_bad_port" ) or
+      diag( "  error was $@" );
 
    ok( not( $socket->opened and $socket->connected ), '$socket not yet connected' );
 

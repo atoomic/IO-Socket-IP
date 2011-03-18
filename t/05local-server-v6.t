@@ -29,7 +29,8 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
       Type      => Socket->$socktype,
    );
 
-   ok( defined $testserver, "IO::Socket::IP->new constructs a $socktype socket" );
+   ok( defined $testserver, "IO::Socket::IP->new constructs a $socktype socket" ) or
+      diag( "  error was $@" );
 
    is( $testserver->sockdomain, $AF_INET6,         "\$testserver->sockdomain for $socktype" );
    is( $testserver->socktype,   Socket->$socktype, "\$testserver->socktype for $socktype" );
@@ -42,7 +43,7 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
       PeerPort => $testserver->sockport,
       Type     => Socket->$socktype,
       Proto    => ( $socktype eq "SOCK_STREAM" ? "tcp" : "udp" ), # Because IO::Socket::INET6 is stupid and always presumes tcp
-   ) or die "Cannot connect to PF_INET - $!";
+   ) or die "Cannot connect to PF_INET6 - $@";
 
    my $testclient = ( $socktype eq "SOCK_STREAM" ) ? 
       $testserver->accept : 
