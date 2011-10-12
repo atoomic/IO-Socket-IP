@@ -6,7 +6,7 @@ use Test::More tests => 8;
 use IO::Socket::IP;
 
 use IO::Socket::INET;
-use Errno qw( EINPROGRESS );
+use Errno qw( EINPROGRESS EWOULDBLOCK );
 
 my $testserver = IO::Socket::INET->new(
    Listen    => 1,
@@ -24,7 +24,7 @@ my $socket = IO::Socket::IP->new(
 ok( defined $socket, 'IO::Socket::IP->new( Blocking => 0 ) constructs a socket' ) or
    diag( "  error was $@" );
 
-while( !$socket->connect and $! == EINPROGRESS ) {
+while( !$socket->connect and ( $! == EINPROGRESS || $! == EWOULDBLOCK ) ) {
    my $wvec = '';
    vec( $wvec, fileno $socket, 1 ) = 1;
 

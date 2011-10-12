@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.07';
+our $VERSION = '0.07_001';
 
 use Carp;
 
@@ -39,6 +39,8 @@ use Socket qw(
 );
 use POSIX qw( dup2 );
 use Errno qw( EINPROGRESS );
+
+use constant HAVE_MSWIN32 => ( $^O eq "MSWin32" );
 
 my $IPv6_re = do {
    # translation of RFC 3986 3.2.2 ABNF to re
@@ -261,7 +263,7 @@ detail.
 
 If neither C<Type> nor C<Proto> hints are provided, a default of
 C<SOCK_STREAM> and C<IPPROTO_TCP> respectively will be set, to maintain
-compatibilty with C<IO::Socket::INET>.
+compatibility with C<IO::Socket::INET>.
 
 If the constructor fails, it will set C<$@> to an appropriate error message;
 this may be from C<$!> or it may be some other string; not every failure
@@ -490,14 +492,15 @@ sub setup
       if( defined( my $addr = $info->{peeraddr} ) ) {
          # It seems that IO::Socket hides EINPROGRESS errors, making them look
          # like a success. This is annoying here.
-         if( $self->connect( $addr ) ) {
-            $! = EINPROGRESS, return 0 if !$self->connected; # EINPROGRESS
-
+         # Instead of putting up with its frankly-irritating intentional
+         # breakage of useful APIs I'm just going to end-run around it and
+         # call CORE::connect() directly
+         if( CORE::connect( $self, $addr ) ) {
             $! = 0;
             return 1;
          }
 
-         return 0 if $! == EINPROGRESS;
+         return 0 if $! == EINPROGRESS or HAVE_MSWIN32 && $! == Errno::EWOULDBLOCK();
 
          ${*$self}{io_socket_ip_errors}[0] = $!;
          next;
@@ -688,8 +691,8 @@ Each time the filehandle is ready to write, the C<connect> method must be
 called, with no arguments.
 
 While C<connect> returns false, the value of C<$!> indicates whether it should
-be tried again (by being set to the value C<EINPROGRESS>), or whether a
-permanent error has occured (e.g. C<ECONNREFUSED>).
+be tried again (by being set to the value C<EINPROGRESS>, or C<EWOULDBLOCK> on
+MSWin32), or whether a permanent error has occured (e.g. C<ECONNREFUSED>).
 
 Once the socket has been connected to the peer, C<connect> will return true
 and the socket will now be ready to use.
@@ -704,7 +707,7 @@ achieved by using L<Net::LibAsyncNS>, or the C<getaddrinfo(3)> function can be
 called in a child process.
 
  use IO::Socket::IP;
- use Errno qw( EINPROGRESS );
+ use Errno qw( EINPROGRESS EWOULDBLOCK );
 
  my @peeraddrinfo = ... # Caller must obtain the getaddinfo result here
 
@@ -713,7 +716,7 @@ called in a child process.
     Blocking     => 0,
  ) or die "Cannot construct socket - $@";
 
- while( !$socket->connect and $! == EINPROGRESS ) {
+ while( !$socket->connect and ( $! == EINPROGRESS || $! == EWOULDBLOCK ) ) {
     my $wvec = '';
     vec( $wvec, fileno $socket, 1 ) = 1;
 
@@ -747,8 +750,8 @@ The value of the C<...Host> argument will be split to give both the hostname
 and port (or service name):
 
  hostname.example.org:http    # Host name
- 10.0.0.1:80                  # IPv4 address
- [fe80::123]:443              # IPv6 address
+ 192.0.2.1:80                 # IPv4 address
+ [2001:db8::1]:80             # IPv6 address
 
 In each case, the port or service name (e.g. C<80>) is passed as the
 C<LocalService> or C<PeerService> argument.

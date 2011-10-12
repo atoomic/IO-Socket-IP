@@ -18,9 +18,9 @@ isa_ok( $sock, "IO::Socket::IP", 'IO::Socket->new( Domain => AF_INET )' );
 SKIP: {
    my $AF_INET6 = eval { Socket::AF_INET6() } ||
                   eval { require Socket6; Socket6::AF_INET6() };
-   $AF_INET6 or skip 1, "No AF_INET6";
+   $AF_INET6 or skip "No AF_INET6", 1;
    eval { IO::Socket::IP->new( LocalHost => "::1" ) } or
-      skip 1, "Unable to bind to ::1";
+      skip "Unable to bind to ::1", 1;
 
    my $sock = IO::Socket->new(
       Domain    => $AF_INET6,

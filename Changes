@@ -1,5 +1,9 @@
 Revision history for IO-Socket-IP
 
+0.07_001 CHANGES:
+         * MSWin32 uses EWOULDBLOCK rather than EINPROGRESS to indicate
+           nonblocking connect()
+
 0.07    CHANGES:
          * Prepare for Socket::getaddrinfo() in core; prefer it to
            Socket::GetAddrInfo::getaddrinfo()

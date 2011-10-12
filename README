@@ -148,7 +148,7 @@ CONSTRUCTORS
 
     If neither "Type" nor "Proto" hints are provided, a default of
     "SOCK_STREAM" and "IPPROTO_TCP" respectively will be set, to maintain
-    compatibilty with "IO::Socket::INET".
+    compatibility with "IO::Socket::INET".
 
     If the constructor fails, it will set $@ to an appropriate error
     message; this may be from $! or it may be some other string; not every
@@ -228,8 +228,9 @@ NON-BLOCKING
     method must be called, with no arguments.
 
     While "connect" returns false, the value of $! indicates whether it
-    should be tried again (by being set to the value "EINPROGRESS"), or
-    whether a permanent error has occured (e.g. "ECONNREFUSED").
+    should be tried again (by being set to the value "EINPROGRESS", or
+    "EWOULDBLOCK" on MSWin32), or whether a permanent error has occured
+    (e.g. "ECONNREFUSED").
 
     Once the socket has been connected to the peer, "connect" will return
     true and the socket will now be ready to use.
@@ -244,7 +245,7 @@ NON-BLOCKING
     function can be called in a child process.
 
      use IO::Socket::IP;
-     use Errno qw( EINPROGRESS );
+     use Errno qw( EINPROGRESS EWOULDBLOCK );
 
      my @peeraddrinfo = ... # Caller must obtain the getaddinfo result here
 
@@ -253,7 +254,7 @@ NON-BLOCKING
         Blocking     => 0,
      ) or die "Cannot construct socket - $@";
 
-     while( !$socket->connect and $! == EINPROGRESS ) {
+     while( !$socket->connect and ( $! == EINPROGRESS || $! == EWOULDBLOCK ) ) {
         my $wvec = '';
         vec( $wvec, fileno $socket, 1 ) = 1;
 
@@ -286,8 +287,8 @@ NON-BLOCKING
     hostname and port (or service name):
 
      hostname.example.org:http    # Host name
-     10.0.0.1:80                  # IPv4 address
-     [fe80::123]:443              # IPv6 address
+     192.0.2.1:80                 # IPv4 address
+     [2001:db8::1]:80             # IPv6 address
 
     In each case, the port or service name (e.g. 80) is passed as the
     "LocalService" or "PeerService" argument.

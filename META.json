@@ -1,0 +1,42 @@
+{
+   "abstract" : "A drop-in replacement for C<IO::Socket::INET> supporting\nboth IPv4 and IPv6",
+   "author" : [
+      "Paul Evans <leonerd@leonerd.org.uk>"
+   ],
+   "dynamic_config" : 1,
+   "generated_by" : "Module::Build version 0.38, CPAN::Meta::Converter version 2.112621",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "IO-Socket-IP",
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Test::More" : 0
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "IO::Socket" : 0,
+            "Socket::GetAddrInfo" : "0.17"
+         }
+      }
+   },
+   "provides" : {
+      "IO::Socket::IP" : {
+         "file" : "lib/IO/Socket/IP.pm",
+         "version" : "0.07_001"
+      }
+   },
+   "release_status" : "testing",
+   "resources" : {
+      "license" : [
+         "http://dev.perl.org/licenses/"
+      ]
+   },
+   "version" : "0.07_001"
+}

@@ -6,7 +6,7 @@ use Test::More tests => 10;
 use IO::Socket::IP;
 
 use IO::Socket::INET;
-use Errno qw( EINPROGRESS ECONNREFUSED );
+use Errno qw( EINPROGRESS EWOULDBLOCK ECONNREFUSED );
 
 # Chris Williams (BINGOS) has offered cpanidx.org as a TCP testing server here
 my $test_host = "cpanidx.org";
@@ -36,12 +36,14 @@ SKIP: {
 
    my $selectcount = 0;
 
-   while( !$socket->connect and $! == EINPROGRESS ) {
+   while( !$socket->connect and ( $! == EINPROGRESS || $! == EWOULDBLOCK ) ) {
       my $wvec = '';
       vec( $wvec, fileno $socket, 1 ) = 1;
 
       $selectcount++;
-      select( undef, $wvec, undef, undef ) or die "Cannot select() - $!";
+      my $ret = select( undef, $wvec, undef, 60 );
+      defined $ret or die "Cannot select() - $!";
+      $ret or die "select() timed out";
    }
 
    ok( !$!, '->connect eventually succeeds' );
@@ -72,12 +74,14 @@ SKIP: {
 
    my $selectcount = 0;
 
-   while( !$socket->connect and $! == EINPROGRESS ) {
+   while( !$socket->connect and ( $! == EINPROGRESS || $! == EWOULDBLOCK ) ) {
       my $wvec = '';
       vec( $wvec, fileno $socket, 1 ) = 1;
 
       $selectcount++;
-      select( undef, $wvec, undef, undef ) or die "Cannot select() - $!";
+      my $ret = select( undef, $wvec, undef, 60 );
+      defined $ret or die "Cannot select() - $!";
+      $ret or die "select() timed out";
    }
 
    my $dollarbang = $!;
