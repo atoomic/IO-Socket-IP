@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.07_001';
+our $VERSION = '0.07_002';
 
 use Carp;
 
@@ -429,7 +429,7 @@ sub _configure
 
          my $family   = $local->{family}   || $peer->{family}   or next;
          my $socktype = $local->{socktype} || $peer->{socktype} or next;
-         my $protocol = $local->{protocol} || $peer->{protocol};
+         my $protocol = $local->{protocol} || $peer->{protocol} || 0;
 
          push @infos, {
             family    => $family,
@@ -688,7 +688,9 @@ non-blocking connect.
 When using non-blocking mode, the caller must repeatedly check for
 writeability on the filehandle (for instance using C<select> or C<IO::Poll>).
 Each time the filehandle is ready to write, the C<connect> method must be
-called, with no arguments.
+called, with no arguments. Note that some operating systems, most notably
+C<MSWin32> do not report a C<connect()> failure using write-ready; so you must
+also C<select()> for exceptional status.
 
 While C<connect> returns false, the value of C<$!> indicates whether it should
 be tried again (by being set to the value C<EINPROGRESS>, or C<EWOULDBLOCK> on
@@ -719,8 +721,10 @@ called in a child process.
  while( !$socket->connect and ( $! == EINPROGRESS || $! == EWOULDBLOCK ) ) {
     my $wvec = '';
     vec( $wvec, fileno $socket, 1 ) = 1;
+    my $evec = '';
+    vec( $evec, fileno $socket, 1 ) = 1;
 
-    select( undef, $wvec, undef, undef ) or die "Cannot select - $!";
+    select( undef, $wvec, $evec, undef ) or die "Cannot select - $!";
  }
 
  die "Cannot connect - $!" if $!;

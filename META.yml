@@ -4,8 +4,7 @@ author:
   - 'Paul Evans <leonerd@leonerd.org.uk>'
 build_requires:
   Test::More: 0
-dynamic_config: 1
-generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.112621'
+generated_by: 'Module::Build version 0.3603'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -14,10 +13,10 @@ name: IO-Socket-IP
 provides:
   IO::Socket::IP:
     file: lib/IO/Socket/IP.pm
-    version: 0.07_001
+    version: 0.07_002
 requires:
   IO::Socket: 0
   Socket::GetAddrInfo: 0.17
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.07_001
+version: 0.07_002

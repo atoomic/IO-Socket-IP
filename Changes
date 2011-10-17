@@ -1,5 +1,12 @@
 Revision history for IO-Socket-IP
 
+0.07_002 CHANGES:
+         * MSWin32 uses select() exceptfds rather than writefds to report on
+           nonblocking connect() failure
+         * Pass 'type' rather than 'proto' to constructor in t/11sockopts.t to
+           avoid MSWin32 test failures
+         * Ensure ->socket protocol argument is always defined
+
 0.07_001 CHANGES:
          * MSWin32 uses EWOULDBLOCK rather than EINPROGRESS to indicate
            nonblocking connect()

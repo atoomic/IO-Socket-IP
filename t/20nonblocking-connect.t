@@ -27,8 +27,10 @@ ok( defined $socket, 'IO::Socket::IP->new( Blocking => 0 ) constructs a socket' 
 while( !$socket->connect and ( $! == EINPROGRESS || $! == EWOULDBLOCK ) ) {
    my $wvec = '';
    vec( $wvec, fileno $socket, 1 ) = 1;
+   my $evec = '';
+   vec( $evec, fileno $socket, 1 ) = 1;
 
-   select( undef, $wvec, undef, undef ) or die "Cannot select() - $!";
+   select( undef, $wvec, $evec, undef ) or die "Cannot select() - $!";
 }
 
 ok( !$!, 'Repeated ->connect eventually succeeds' );

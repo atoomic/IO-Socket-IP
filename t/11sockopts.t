@@ -10,7 +10,8 @@ use Socket qw( SOL_SOCKET SO_REUSEADDR SO_REUSEPORT SO_BROADCAST );
 {
    my $sock = IO::Socket::IP->new(
       LocalHost => "127.0.0.1",
-      Proto     => "tcp",
+      Type      => SOCK_STREAM,
+      Listen    => 1,
       ReuseAddr => 1,
    ) or die "Cannot socket() - $@";
 
@@ -23,7 +24,8 @@ SKIP: {
 
    my $sock = IO::Socket::IP->new(
       LocalHost => "127.0.0.1",
-      Proto     => "tcp",
+      Type      => SOCK_STREAM,
+      Listen    => 1,
       ReusePort => 1,
    ) or die "Cannot socket() - $@";
 
@@ -33,7 +35,7 @@ SKIP: {
 {
    my $sock = IO::Socket::IP->new(
       LocalHost => "127.0.0.1",
-      Proto     => "udp",
+      Type      => SOCK_DGRAM,
       Broadcast => 1,
    ) or die "Cannot socket() - $@";
 

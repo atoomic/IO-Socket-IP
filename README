@@ -225,7 +225,9 @@ NON-BLOCKING
     When using non-blocking mode, the caller must repeatedly check for
     writeability on the filehandle (for instance using "select" or
     "IO::Poll"). Each time the filehandle is ready to write, the "connect"
-    method must be called, with no arguments.
+    method must be called, with no arguments. Note that some operating
+    systems, most notably "MSWin32" do not report a "connect()" failure
+    using write-ready; so you must also "select()" for exceptional status.
 
     While "connect" returns false, the value of $! indicates whether it
     should be tried again (by being set to the value "EINPROGRESS", or
@@ -257,8 +259,10 @@ NON-BLOCKING
      while( !$socket->connect and ( $! == EINPROGRESS || $! == EWOULDBLOCK ) ) {
         my $wvec = '';
         vec( $wvec, fileno $socket, 1 ) = 1;
+        my $evec = '';
+        vec( $evec, fileno $socket, 1 ) = 1;
 
-        select( undef, $wvec, undef, undef ) or die "Cannot select - $!";
+        select( undef, $wvec, $evec, undef ) or die "Cannot select - $!";
      }
 
      die "Cannot connect - $!" if $!;

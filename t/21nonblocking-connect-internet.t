@@ -39,9 +39,11 @@ SKIP: {
    while( !$socket->connect and ( $! == EINPROGRESS || $! == EWOULDBLOCK ) ) {
       my $wvec = '';
       vec( $wvec, fileno $socket, 1 ) = 1;
+      my $evec = '';
+      vec( $evec, fileno $socket, 1 ) = 1;
 
       $selectcount++;
-      my $ret = select( undef, $wvec, undef, 60 );
+      my $ret = select( undef, $wvec, $evec, 60 );
       defined $ret or die "Cannot select() - $!";
       $ret or die "select() timed out";
    }
@@ -77,9 +79,11 @@ SKIP: {
    while( !$socket->connect and ( $! == EINPROGRESS || $! == EWOULDBLOCK ) ) {
       my $wvec = '';
       vec( $wvec, fileno $socket, 1 ) = 1;
+      my $evec = '';
+      vec( $evec, fileno $socket, 1 ) = 1;
 
       $selectcount++;
-      my $ret = select( undef, $wvec, undef, 60 );
+      my $ret = select( undef, $wvec, $evec, 60 );
       defined $ret or die "Cannot select() - $!";
       $ret or die "select() timed out";
    }
