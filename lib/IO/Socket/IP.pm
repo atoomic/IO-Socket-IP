@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.07_002';
+our $VERSION = '0.07_003';
 
 use Carp;
 
@@ -33,7 +33,7 @@ BEGIN {
 }
 
 use Socket qw(
-   SOCK_DGRAM SOCK_STREAM IPPROTO_TCP
+   SOCK_DGRAM SOCK_STREAM IPPROTO_TCP IPPROTO_UDP
    SOL_SOCKET
    SO_REUSEADDR SO_REUSEPORT SO_BROADCAST SO_ERROR
 );
@@ -359,6 +359,13 @@ sub _configure
    if( !defined $hints{socktype} and !defined $hints{protocol} ) {
       $hints{socktype} = SOCK_STREAM;
       $hints{protocol} = IPPROTO_TCP;
+   }
+
+   # Some OSes (NetBSD) don't seem to like just a protocol hint without a
+   # socktype hint as well. We'll set a couple of common ones
+   if( !defined $hints{socktype} and defined $hints{protocol} ) {
+      $hints{socktype} = SOCK_STREAM if $hints{protocol} == IPPROTO_TCP;
+      $hints{socktype} = SOCK_DGRAM  if $hints{protocol} == IPPROTO_UDP;
    }
 
    if( my $info = delete $arg->{LocalAddrInfo} ) {

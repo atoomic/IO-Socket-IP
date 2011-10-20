@@ -1,5 +1,10 @@
 Revision history for IO-Socket-IP
 
+0.07_003 CHANGES:
+         * Bugfix for (e.g.) NetBSD, which gets upset at protocol hint without
+           socktype hint to getaddrinfo()
+         * Added configure_requires Module::Build
+
 0.07_002 CHANGES:
          * MSWin32 uses select() exceptfds rather than writefds to report on
            nonblocking connect() failure
