@@ -1,5 +1,12 @@
 Revision history for IO-Socket-IP
 
+0.07_004 CHANGES:
+         * Localise $1/$2 to placate [perl #67962]
+         * Fix some spelling mistakes/typoes
+         * Require Socket 1.94_03, rather than dynamic
+           Socket-or-Socket::GetAddrInfo, now that Socket is dual-life.
+         * Simpler Build.PL now it has no dynamic dependencies
+
 0.07_003 CHANGES:
          * Bugfix for (e.g.) NetBSD, which gets upset at protocol hint without
            socktype hint to getaddrinfo()

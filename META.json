@@ -4,7 +4,7 @@
       "Paul Evans <leonerd@leonerd.org.uk>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.38, CPAN::Meta::Converter version 2.110440",
+   "generated_by" : "Module::Build version 0.38, CPAN::Meta::Converter version 2.112621",
    "license" : [
       "perl_5"
    ],
@@ -16,26 +16,20 @@
    "prereqs" : {
       "build" : {
          "requires" : {
-            "Module::Build" : 0,
             "Test::More" : 0
-         }
-      },
-      "configure" : {
-         "requires" : {
-            "Module::Build" : 0
          }
       },
       "runtime" : {
          "requires" : {
             "IO::Socket" : 0,
-            "Socket" : "1.93"
+            "Socket" : "1.94_03"
          }
       }
    },
    "provides" : {
       "IO::Socket::IP" : {
          "file" : "lib/IO/Socket/IP.pm",
-         "version" : "0.07_003"
+         "version" : "0.07_004"
       }
    },
    "release_status" : "testing",
@@ -44,5 +38,5 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "0.07_003"
+   "version" : "0.07_004"
 }

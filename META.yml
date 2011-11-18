@@ -3,12 +3,9 @@ abstract: "A drop-in replacement for C<IO::Socket::INET> supporting\nboth IPv4 a
 author:
   - 'Paul Evans <leonerd@leonerd.org.uk>'
 build_requires:
-  Module::Build: 0
   Test::More: 0
-configure_requires:
-  Module::Build: 0
 dynamic_config: 1
-generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.110440'
+generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.112621'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -17,10 +14,10 @@ name: IO-Socket-IP
 provides:
   IO::Socket::IP:
     file: lib/IO/Socket/IP.pm
-    version: 0.07_003
+    version: 0.07_004
 requires:
   IO::Socket: 0
-  Socket: 1.93
+  Socket: 1.94_03
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.07_003
+version: 0.07_004

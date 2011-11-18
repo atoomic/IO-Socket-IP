@@ -1,5 +1,5 @@
 NAME
-    "IO::Socket::IP" - A drop-in replacement for "IO::Socket::INET"
+    `IO::Socket::IP' - A drop-in replacement for `IO::Socket::INET'
     supporting both IPv4 and IPv6
 
 SYNOPSIS
@@ -11,8 +11,8 @@ SYNOPSIS
         Type     => SOCK_STREAM,
      ) or die "Cannot construct socket - $@";
 
-     my $familyname = ( $sock->sockdomain == AF_INET6 ) ? "IPv6" :
-                      ( $sock->sockdomain == AF_INET  ) ? "IPv4" :
+     my $familyname = ( $sock->sockdomain == PF_INET6 ) ? "IPv6" :
+                      ( $sock->sockdomain == PF_INET  ) ? "IPv4" :
                                                           "unknown";
 
      printf "Connected to google via %s\n", $familyname;
@@ -21,144 +21,144 @@ DESCRIPTION
     This module provides a protocol-independent way to use IPv4 and IPv6
     sockets, as a drop-in replacement for IO::Socket::INET. Most constructor
     arguments and methods are provided in a backward-compatible way. For a
-    list of known differences, see the "IO::Socket::INET" INCOMPATIBILITES
+    list of known differences, see the `IO::Socket::INET' INCOMPATIBILITES
     section below.
 
-    It uses the getaddrinfo(3) function to convert hostnames and service
+    It uses the `getaddrinfo(3)' function to convert hostnames and service
     names or port numbers into sets of possible addresses to connect to or
     listen on. This allows it to work for IPv6 where the system supports it,
     while still falling back to IPv4-only on systems which don't.
 
-REPLACING "IO::Socket" DEFAULT BEHAVIOUR
-    By placing "-register" in the import list, "IO::Socket" uses
-    "IO::Socket::IP" rather than "IO::Socket::INET" as the class that
-    handles "AF_INET". "IO::Socket" will also use "IO::Socket::IP" rather
-    than "IO::Socket::INET6" to handle "AF_INET6", provided that the
-    "AF_INET6" constant is available.
+REPLACING `IO::Socket' DEFAULT BEHAVIOUR
+    By placing `-register' in the import list, `IO::Socket' uses
+    `IO::Socket::IP' rather than `IO::Socket::INET' as the class that
+    handles `PF_INET'. `IO::Socket' will also use `IO::Socket::IP' rather
+    than `IO::Socket::INET6' to handle `PF_INET6', provided that the
+    `AF_INET6' constant is available.
 
-    Changing "IO::Socket"'s default behaviour means that calling the
-    "IO::Socket" constructor with either "AF_INET" or "AF_INET6" as the
-    "Domain" parameter will yield an "IO::Socket::IP" object.
+    Changing `IO::Socket''s default behaviour means that calling the
+    `IO::Socket' constructor with either `PF_INET' or `PF_INET6' as the
+    `Domain' parameter will yield an `IO::Socket::IP' object.
 
      use IO::Socket::IP -register;
 
      my $sock = IO::Socket->new(
-        Domain    => AF_INET6,
+        Domain    => PF_INET6,
         LocalHost => "::1",
         Listen    => 1,
      ) or die "Cannot create socket - $@\n";
 
      print "Created a socket of type " . ref($sock) . "\n";
 
-    Note that "-register" is a global setting that applies to the entire
+    Note that `-register' is a global setting that applies to the entire
     program; it cannot be applied only for certain callers, removed, or
     limited by lexical scope.
 
 CONSTRUCTORS
   $sock = IO::Socket::IP->new( %args )
-    Creates a new "IO::Socket::IP" object, containing a newly created socket
+    Creates a new `IO::Socket::IP' object, containing a newly created socket
     handle according to the named arguments passed. The recognised arguments
     are:
 
     PeerHost => STRING
     PeerService => STRING
-            Hostname and service name for the peer to "connect()" to. The
+            Hostname and service name for the peer to `connect()' to. The
             service name may be given as a port number, as a decimal string.
 
     PeerAddr => STRING
     PeerPort => STRING
             For symmetry with the accessor methods and compatibility with
-            "IO::Socket::INET", these are accepted as synonyms for
-            "PeerHost" and "PeerService" respectively.
+            `IO::Socket::INET', these are accepted as synonyms for
+            `PeerHost' and `PeerService' respectively.
 
     PeerAddrInfo => ARRAY
-            Alternate form of specifying the peer to "connect()" to. This
+            Alternate form of specifying the peer to `connect()' to. This
             should be an array of the form returned by
-            "Socket::GetAddrInfo::getaddrinfo".
+            `Socket::getaddrinfo'.
 
-            This parameter takes precedence over the "Peer*", "Family",
-            "Type" and "Proto" arguments.
+            This parameter takes precedence over the `Peer*', `Family',
+            `Type' and `Proto' arguments.
 
     LocalHost => STRING
     LocalService => STRING
-            Hostname and service name for the local address to "bind()" to.
+            Hostname and service name for the local address to `bind()' to.
 
     LocalAddr => STRING
     LocalPort => STRING
             For symmetry with the accessor methods and compatibility with
-            "IO::Socket::INET", these are accepted as synonyms for
-            "LocalHost" and "LocalService" respectively.
+            `IO::Socket::INET', these are accepted as synonyms for
+            `LocalHost' and `LocalService' respectively.
 
     LocalAddrInfo => ARRAY
-            Alternate form of specifying the local address to "bind()" to.
+            Alternate form of specifying the local address to `bind()' to.
             This should be an array of the form returned by
-            "Socket::GetAddrInfo::getaddrinfo".
+            `Socket::getaddrinfo'.
 
-            This parameter takes precedence over the "Local*", "Family",
-            "Type" and "Proto" arguments.
+            This parameter takes precedence over the `Local*', `Family',
+            `Type' and `Proto' arguments.
 
     Family => INT
-            The socket family to pass to "getaddrinfo" (e.g. "AF_INET",
-            "AF_INET6"). Normally this will be left undefined, and
-            "getaddrinfo" will search using any family supported by the
-            system.
+            The address family to pass to `getaddrinfo' (e.g. `AF_INET',
+            `AF_INET6'). Normally this will be left undefined, and
+            `getaddrinfo' will search using any address family supported by
+            the system.
 
     Type => INT
-            The socket type to pass to "getaddrinfo" (e.g. "SOCK_STREAM",
-            "SOCK_DGRAM"). Normally defined by the caller; if left undefined
-            "getaddrinfo" may attempt to infer the type from the service
+            The socket type to pass to `getaddrinfo' (e.g. `SOCK_STREAM',
+            `SOCK_DGRAM'). Normally defined by the caller; if left undefined
+            `getaddrinfo' may attempt to infer the type from the service
             name.
 
     Proto => STRING or INT
-            The IP protocol to use for the socket (e.g. 'tcp',
-            "IPPROTO_TCP", 'udp',"IPPROTO_UDP"). Normally this will be left
-            undefined, and either "getaddrinfo" or the kernel will choose an
-            appropriate value. May be given either in string name or numeric
-            form.
+            The IP protocol to use for the socket (e.g. `'tcp'',
+            `IPPROTO_TCP', `'udp'',`IPPROTO_UDP'). Normally this will be
+            left undefined, and either `getaddrinfo' or the kernel will
+            choose an appropriate value. May be given either in string name
+            or numeric form.
 
     Listen => INT
             If defined, puts the socket into listening mode where new
-            connections can be accepted using the "accept" method. The value
-            given is used as the listen(2) queue size.
+            connections can be accepted using the `accept' method. The value
+            given is used as the `listen(2)' queue size.
 
     ReuseAddr => BOOL
-            If true, set the "SO_REUSEADDR" sockopt
+            If true, set the `SO_REUSEADDR' sockopt
 
     ReusePort => BOOL
-            If true, set the "SO_REUSEPORT" sockopt (not all OSes implement
+            If true, set the `SO_REUSEPORT' sockopt (not all OSes implement
             this sockopt)
 
     Broadcast => BOOL
-            If true, set the "SO_BROADCAST" sockopt
+            If true, set the `SO_BROADCAST' sockopt
 
-    Timeout This "IO::Socket::INET"-style argument is not currently
-            supported. See the "IO::Socket::INET" INCOMPATIBILITES section
+    Timeout This `IO::Socket::INET'-style argument is not currently
+            supported. See the `IO::Socket::INET' INCOMPATIBILITES section
             below.
 
     MultiHomed
-            This "IO::Socket::INET"-style argument is not currently
-            supported. See the "IO::Socket::INET" INCOMPATIBILITES section
+            This `IO::Socket::INET'-style argument is not currently
+            supported. See the `IO::Socket::INET' INCOMPATIBILITES section
             below. However, the behaviour it enables is always performed by
-            "IO::Socket::IP".
+            `IO::Socket::IP'.
 
     Blocking => BOOL
             If defined but false, the socket will be set to non-blocking
             mode. Otherwise it will default to blocking mode. See the
             NON-BLOCKING section below for more detail.
 
-    If neither "Type" nor "Proto" hints are provided, a default of
-    "SOCK_STREAM" and "IPPROTO_TCP" respectively will be set, to maintain
-    compatibility with "IO::Socket::INET".
+    If neither `Type' nor `Proto' hints are provided, a default of
+    `SOCK_STREAM' and `IPPROTO_TCP' respectively will be set, to maintain
+    compatibility with `IO::Socket::INET'.
 
-    If the constructor fails, it will set $@ to an appropriate error
-    message; this may be from $! or it may be some other string; not every
-    failure necessarily has an associated "errno" value.
+    If the constructor fails, it will set `$@' to an appropriate error
+    message; this may be from `$!' or it may be some other string; not every
+    failure necessarily has an associated `errno' value.
 
   $sock = IO::Socket::IP->new( $peeraddr )
     As a special case, if the constructor is passed a single argument (as
     opposed to an even-sized list of key/value pairs), it is taken to be the
-    value of the "PeerAddr" parameter. This is parsed in the same way,
-    according to the behaviour given in the "PeerHost" AND "LocalHost"
+    value of the `PeerAddr' parameter. This is parsed in the same way,
+    according to the behaviour given in the `PeerHost' AND `LocalHost'
     PARSING section below.
 
 METHODS
@@ -167,15 +167,15 @@ METHODS
 
   ( $host, $service ) = $sock->sockhost_service( $numeric )
     Returns the hostname and service name of the local address (that is, the
-    socket address given by the "sockname" method).
+    socket address given by the `sockname' method).
 
-    If $numeric is true, these will be given in numeric form rather than
+    If `$numeric' is true, these will be given in numeric form rather than
     being resolved into names.
 
     The following four convenience wrappers may be used to obtain one of the
     two values returned here. If both host and service names are required,
-    this method is preferrable to the following wrappers, because it will
-    call getnameinfo(3) only once.
+    this method is preferable to the following wrappers, because it will
+    call `getnameinfo(3)' only once.
 
   $addr = $sock->sockhost
     Return the numeric form of the local address
@@ -191,13 +191,13 @@ METHODS
 
   ( $host, $service ) = $sock->peerhost_service( $numeric )
     Returns the hostname and service name of the peer address (that is, the
-    socket address given by the "peername" method), similar to the
-    "sockhost_service" method.
+    socket address given by the `peername' method), similar to the
+    `sockhost_service' method.
 
     The following four convenience wrappers may be used to obtain one of the
     two values returned here. If both host and service names are required,
-    this method is preferrable to the following wrappers, because it will
-    call getnameinfo(3) only once.
+    this method is preferable to the following wrappers, because it will
+    call `getnameinfo(3)' only once.
 
   $addr = $sock->peerhost
     Return the numeric form of the peer address
@@ -213,37 +213,37 @@ METHODS
 
 NON-BLOCKING
     If the constructor is passed a defined but false value for the
-    "Blocking" argument then the socket is put into non-blocking mode. When
+    `Blocking' argument then the socket is put into non-blocking mode. When
     in non-blocking mode, the socket will not be set up by the time the
-    constructor returns, because the underlying connect(2) syscall would
+    constructor returns, because the underlying `connect(2)' syscall would
     otherwise have to block.
 
-    The non-blocking behaviour is an extension of the "IO::Socket::INET"
-    API, unique to "IO::Socket::IP", because the former does not support
+    The non-blocking behaviour is an extension of the `IO::Socket::INET'
+    API, unique to `IO::Socket::IP', because the former does not support
     multi-homed non-blocking connect.
 
     When using non-blocking mode, the caller must repeatedly check for
-    writeability on the filehandle (for instance using "select" or
-    "IO::Poll"). Each time the filehandle is ready to write, the "connect"
+    writeability on the filehandle (for instance using `select' or
+    `IO::Poll'). Each time the filehandle is ready to write, the `connect'
     method must be called, with no arguments. Note that some operating
-    systems, most notably "MSWin32" do not report a "connect()" failure
-    using write-ready; so you must also "select()" for exceptional status.
+    systems, most notably `MSWin32' do not report a `connect()' failure
+    using write-ready; so you must also `select()' for exceptional status.
 
-    While "connect" returns false, the value of $! indicates whether it
-    should be tried again (by being set to the value "EINPROGRESS", or
-    "EWOULDBLOCK" on MSWin32), or whether a permanent error has occured
-    (e.g. "ECONNREFUSED").
+    While `connect' returns false, the value of `$!' indicates whether it
+    should be tried again (by being set to the value `EINPROGRESS', or
+    `EWOULDBLOCK' on MSWin32), or whether a permanent error has occurred
+    (e.g. `ECONNREFUSED').
 
-    Once the socket has been connected to the peer, "connect" will return
+    Once the socket has been connected to the peer, `connect' will return
     true and the socket will now be ready to use.
 
-    Note that calls to the platform's underlying getaddrinfo(3) function may
-    block. If "IO::Socket::IP" has to perform this lookup, the constructor
-    will block even when in non-blocking mode.
+    Note that calls to the platform's underlying `getaddrinfo(3)' function
+    may block. If `IO::Socket::IP' has to perform this lookup, the
+    constructor will block even when in non-blocking mode.
 
     To avoid this blocking behaviour, the caller should pass in the result
-    of such a lookup using the "PeerAddrInfo" or "LocalAddrInfo" arguments.
-    This can be achieved by using Net::LibAsyncNS, or the getaddrinfo(3)
+    of such a lookup using the `PeerAddrInfo' or `LocalAddrInfo' arguments.
+    This can be achieved by using Net::LibAsyncNS, or the `getaddrinfo(3)'
     function can be called in a child process.
 
      use IO::Socket::IP;
@@ -269,63 +269,63 @@ NON-BLOCKING
 
      ...
 
-    The example above uses "select()", but any similar mechanism should work
-    analogously. "IO::Socket::IP" takes care when creating new socket
+    The example above uses `select()', but any similar mechanism should work
+    analogously. `IO::Socket::IP' takes care when creating new socket
     filehandles to preserve the actual file descriptor number, so such
-    techniques as "poll" or "epoll" should be transparent to its
+    techniques as `poll' or `epoll' should be transparent to its
     reallocation of a different socket underneath, perhaps in order to
-    switch protocol family between "PF_INET" and "PF_INET6".
+    switch protocol family between `PF_INET' and `PF_INET6'.
 
-    For another example using "IO::Poll" and "Net::LibAsyncNS", see the
+    For another example using `IO::Poll' and `Net::LibAsyncNS', see the
     examples/nonblocking_libasyncns.pl file in the module distribution.
 
-"PeerHost" AND "LocalHost" PARSING
-    To support the "IO::Socket::INET" API, the host and port information may
+`PeerHost' AND `LocalHost' PARSING
+    To support the `IO::Socket::INET' API, the host and port information may
     be passed in a single string rather than as two separate arguments.
 
-    If either "LocalHost" or "PeerHost" (or their "...Addr" synonyms) have
-    any of the following special forms, and "LocalService" or "PeerService"
-    (or their "...Port" synonyms) are absent, special parsing is applied.
+    If either `LocalHost' or `PeerHost' (or their `...Addr' synonyms) have
+    any of the following special forms, and `LocalService' or `PeerService'
+    (or their `...Port' synonyms) are absent, special parsing is applied.
 
-    The value of the "...Host" argument will be split to give both the
+    The value of the `...Host' argument will be split to give both the
     hostname and port (or service name):
 
      hostname.example.org:http    # Host name
      192.0.2.1:80                 # IPv4 address
      [2001:db8::1]:80             # IPv6 address
 
-    In each case, the port or service name (e.g. 80) is passed as the
-    "LocalService" or "PeerService" argument.
+    In each case, the port or service name (e.g. `80') is passed as the
+    `LocalService' or `PeerService' argument.
 
-    Either of "LocalService" or "PeerService" (or their "...Port" synonyms)
+    Either of `LocalService' or `PeerService' (or their `...Port' synonyms)
     can be either a service name, a decimal number, or a string containing
     both a service name and number, in a form such as
 
      http(80)
 
-    In this case, the name ("http") will be tried first, but if the resolver
-    does not understand it then the port number (80) will be used instead.
+    In this case, the name (`http') will be tried first, but if the resolver
+    does not understand it then the port number (`80') will be used instead.
 
-"IO::Socket::INET" INCOMPATIBILITES
-    *   The "Timeout" and "MultiHomed" constructor arguments are currently
+`IO::Socket::INET' INCOMPATIBILITES
+    *   The `Timeout' and `MultiHomed' constructor arguments are currently
         not recognised.
 
-        The behaviour enabled by "MultiHomed" is in fact implemented by
-        "IO::Socket::IP" as it is required to correctly support searching
-        for a useable address from the results of the getaddrinfo(3) call.
+        The behaviour enabled by `MultiHomed' is in fact implemented by
+        `IO::Socket::IP' as it is required to correctly support searching
+        for a useable address from the results of the `getaddrinfo(3)' call.
 
 TODO
-    *   Cache the returns from "sockhost_service" and "peerhost_service" to
+    *   Cache the returns from `sockhost_service' and `peerhost_service' to
         avoid double-lookup overhead in such code as
 
           printf "Peer is %s:%d\n", $sock->peerhost, $sock->peerport;
 
-    *   Investigate whether "POSIX::dup2" upsets BSD's "kqueue" watchers,
+    *   Investigate whether `POSIX::dup2' upsets BSD's `kqueue' watchers,
         and if so, consider what possible workarounds might be applied.
 
 BUGS
     *   Nonblocking connect fails unit tests on MSWin32 smoke-testing
-        machines. The specifics of the failure are that "connect()" seems to
+        machines. The specifics of the failure are that `connect()' seems to
         block anyway despite being asked not to, and that failure to connect
         is not detected properly. I am as yet unsure why this is.
 

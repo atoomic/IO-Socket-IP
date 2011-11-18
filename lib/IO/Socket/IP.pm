@@ -9,33 +9,19 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.07_003';
+our $VERSION = '0.07_004';
 
 use Carp;
 
-BEGIN {
-   # Perl 5.13.9 or above has Socket::getaddrinfo support in core.
-   # Before that we need to use Socket::GetAddrInfo
-   my @imports = qw(
-      getaddrinfo getnameinfo
-      AI_PASSIVE
-      NI_NUMERICHOST NI_NUMERICSERV
-      NI_DGRAM
-   );
-
-   if( require Socket and defined &Socket::getaddrinfo ) {
-      Socket->import( @imports );
-   }
-   else {
-      require Socket::GetAddrInfo;
-      Socket::GetAddrInfo->import( ':newapi', @imports );
-   }
-}
-
-use Socket qw(
-   SOCK_DGRAM SOCK_STREAM IPPROTO_TCP IPPROTO_UDP
-   SOL_SOCKET
+use Socket 1.94_03 qw(
+   getaddrinfo getnameinfo
+   AF_INET
+   AI_PASSIVE
+   IPPROTO_TCP IPPROTO_UDP
+   NI_DGRAM NI_NUMERICHOST NI_NUMERICSERV
    SO_REUSEADDR SO_REUSEPORT SO_BROADCAST SO_ERROR
+   SOCK_DGRAM SOCK_STREAM 
+   SOL_SOCKET
 );
 use POSIX qw( dup2 );
 use Errno qw( EINPROGRESS );
@@ -81,8 +67,8 @@ both IPv4 and IPv6
     Type     => SOCK_STREAM,
  ) or die "Cannot construct socket - $@";
 
- my $familyname = ( $sock->sockdomain == AF_INET6 ) ? "IPv6" :
-                  ( $sock->sockdomain == AF_INET  ) ? "IPv4" :
+ my $familyname = ( $sock->sockdomain == PF_INET6 ) ? "IPv6" :
+                  ( $sock->sockdomain == PF_INET  ) ? "IPv4" :
                                                       "unknown";
 
  printf "Connected to google via %s\n", $familyname;
@@ -103,18 +89,18 @@ falling back to IPv4-only on systems which don't.
 
 By placing C<-register> in the import list, C<IO::Socket> uses
 C<IO::Socket::IP> rather than C<IO::Socket::INET> as the class that handles
-C<AF_INET>.  C<IO::Socket> will also use C<IO::Socket::IP> rather than
-C<IO::Socket::INET6> to handle C<AF_INET6>, provided that the C<AF_INET6>
+C<PF_INET>.  C<IO::Socket> will also use C<IO::Socket::IP> rather than
+C<IO::Socket::INET6> to handle C<PF_INET6>, provided that the C<AF_INET6>
 constant is available.
 
 Changing C<IO::Socket>'s default behaviour means that calling the
-C<IO::Socket> constructor with either C<AF_INET> or C<AF_INET6> as the
+C<IO::Socket> constructor with either C<PF_INET> or C<PF_INET6> as the
 C<Domain> parameter will yield an C<IO::Socket::IP> object.
 
  use IO::Socket::IP -register;
 
  my $sock = IO::Socket->new(
-    Domain    => AF_INET6,
+    Domain    => PF_INET6,
     LocalHost => "::1",
     Listen    => 1,
  ) or die "Cannot create socket - $@\n";
@@ -134,10 +120,9 @@ sub import
 
    foreach ( @_ ) {
       if( $_ eq "-register" ) {
-         $pkg->register_domain( Socket::AF_INET() );
+         $pkg->register_domain( AF_INET );
 
-         my $AF_INET6 = eval { Socket::AF_INET6() } ||
-                        eval { require Socket6; Socket6::AF_INET6() };
+         my $AF_INET6 = eval { Socket::AF_INET6() };
          $pkg->register_domain( $AF_INET6 ) if defined $AF_INET6;
       }
       else {
@@ -178,7 +163,7 @@ C<PeerService> respectively.
 =item PeerAddrInfo => ARRAY
 
 Alternate form of specifying the peer to C<connect()> to. This should be an
-array of the form returned by C<Socket::GetAddrInfo::getaddrinfo>.
+array of the form returned by C<Socket::getaddrinfo>.
 
 This parameter takes precedence over the C<Peer*>, C<Family>, C<Type> and
 C<Proto> arguments.
@@ -200,16 +185,16 @@ C<LocalService> respectively.
 =item LocalAddrInfo => ARRAY
 
 Alternate form of specifying the local address to C<bind()> to. This should be
-an array of the form returned by C<Socket::GetAddrInfo::getaddrinfo>.
+an array of the form returned by C<Socket::getaddrinfo>.
 
 This parameter takes precedence over the C<Local*>, C<Family>, C<Type> and
 C<Proto> arguments.
 
 =item Family => INT
 
-The socket family to pass to C<getaddrinfo> (e.g. C<AF_INET>, C<AF_INET6>).
+The address family to pass to C<getaddrinfo> (e.g. C<AF_INET>, C<AF_INET6>).
 Normally this will be left undefined, and C<getaddrinfo> will search using any
-family supported by the system.
+address family supported by the system.
 
 =item Type => INT
 
@@ -311,6 +296,7 @@ sub configure
       if (exists $arg->{$host} && !exists $arg->{$service}) {
          local $_ = $arg->{$host};
          defined or next;
+         local ( $1, $2 ); # Placate a taint-related bug; [perl #67962]
          if (/\A\[($IPv6_re)\](?::([^\s:]*))?\z/o || /\A([^\s:]*):([^\s:]*)\z/) {
             $arg->{$host}    = $1;
             $arg->{$service} = $2 if defined $2 && length $2;
@@ -376,6 +362,7 @@ sub _configure
       my $host = delete $arg->{LocalHost};
       my $service = delete $arg->{LocalService};
 
+      local $1; # Placate a taint-related bug; [perl #67962]
       defined $service and $service =~ s/\((\d+)\)$// and
          my $fallback_port = $1;
 
@@ -399,6 +386,7 @@ sub _configure
       defined( my $service = delete $arg->{PeerService} ) or
          croak "Expected 'PeerService'";
 
+      local $1; # Placate a taint-related bug; [perl #67962]
       defined $service and $service =~ s/\((\d+)\)$// and
          my $fallback_port = $1;
 
@@ -572,7 +560,7 @@ resolved into names.
 
 The following four convenience wrappers may be used to obtain one of the two
 values returned here. If both host and service names are required, this method
-is preferrable to the following wrappers, because it will call
+is preferable to the following wrappers, because it will call
 C<getnameinfo(3)> only once.
 
 =cut
@@ -617,7 +605,7 @@ C<sockhost_service> method.
 
 The following four convenience wrappers may be used to obtain one of the two
 values returned here. If both host and service names are required, this method
-is preferrable to the following wrappers, because it will call
+is preferable to the following wrappers, because it will call
 C<getnameinfo(3)> only once.
 
 =cut
@@ -701,7 +689,7 @@ also C<select()> for exceptional status.
 
 While C<connect> returns false, the value of C<$!> indicates whether it should
 be tried again (by being set to the value C<EINPROGRESS>, or C<EWOULDBLOCK> on
-MSWin32), or whether a permanent error has occured (e.g. C<ECONNREFUSED>).
+MSWin32), or whether a permanent error has occurred (e.g. C<ECONNREFUSED>).
 
 Once the socket has been connected to the peer, C<connect> will return true
 and the socket will now be ready to use.

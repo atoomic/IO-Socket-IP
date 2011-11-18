@@ -18,7 +18,7 @@ BEGIN {
    }
    else {
       require Socket::GetAddrInfo;
-      Socket::GetAddrInfo->import( ':newapi', @imports );
+      Socket::GetAddrInfo->import( @imports );
    }
 }
 

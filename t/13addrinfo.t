@@ -8,9 +8,10 @@ use IO::Socket::IP;
 use IO::Socket::INET;
 use Socket qw( SOCK_STREAM unpack_sockaddr_in );
 
-eval { Socket->import(qw( getaddrinfo )) } or
+eval { Socket->import(qw( getaddrinfo )); 1 } or
    eval { require Socket::GetAddrInfo;
-          Socket::GetAddrInfo->import(qw( :newapi getaddrinfo )) };
+          Socket::GetAddrInfo->import(qw( getaddrinfo )); 1 } or
+   die $@;
 
 {
    my $testserver = IO::Socket::INET->new(
