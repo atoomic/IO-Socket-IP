@@ -4,23 +4,10 @@ use strict;
 use Test::More tests => 1;
 
 use IO::Socket::IP;
-use Socket qw( PF_INET SOCK_STREAM IPPROTO_TCP pack_sockaddr_in INADDR_ANY );
-
-BEGIN {
-   # Perl 5.13.9 or above has Socket::getaddrinfo support in core.
-   # Before that we need to use Socket::GetAddrInfo
-   my @imports = qw(
-      AI_PASSIVE
-   );
-
-   if( require Socket and defined &Socket::getaddrinfo ) {
-      Socket->import( @imports );
-   }
-   else {
-      require Socket::GetAddrInfo;
-      Socket::GetAddrInfo->import( @imports );
-   }
-}
+use Socket 1.95 qw(
+   PF_INET SOCK_STREAM IPPROTO_TCP pack_sockaddr_in INADDR_ANY
+   AI_PASSIVE AI_ADDRCONFIG
+);
 
 my @gai_args;
 my @gai_rets;
@@ -47,7 +34,7 @@ IO::Socket::IP->new( LocalPort => "zyxxyblarg(80)" );
 
 is_deeply( \@gai_args,
            [ 
-              [ undef, "zyxxyblarg", { flags => AI_PASSIVE, socktype => SOCK_STREAM, protocol => IPPROTO_TCP } ],
-              [ undef, "80",         { flags => AI_PASSIVE, socktype => SOCK_STREAM, protocol => IPPROTO_TCP } ],
+              [ undef, "zyxxyblarg", { flags => AI_PASSIVE|AI_ADDRCONFIG, socktype => SOCK_STREAM, protocol => IPPROTO_TCP } ],
+              [ undef, "80",         { flags => AI_PASSIVE|AI_ADDRCONFIG, socktype => SOCK_STREAM, protocol => IPPROTO_TCP } ],
            ],
            '@gai_args for LocalPort => "zyxxyblarg(80)"' );

@@ -22,14 +22,14 @@
       "runtime" : {
          "requires" : {
             "IO::Socket" : 0,
-            "Socket" : "1.94_03"
+            "Socket" : "1.95"
          }
       }
    },
    "provides" : {
       "IO::Socket::IP" : {
          "file" : "lib/IO/Socket/IP.pm",
-         "version" : "0.07_004"
+         "version" : "0.07_005"
       }
    },
    "release_status" : "testing",
@@ -38,5 +38,5 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "0.07_004"
+   "version" : "0.07_005"
 }

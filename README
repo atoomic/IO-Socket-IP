@@ -131,6 +131,17 @@ CONSTRUCTORS
     Broadcast => BOOL
             If true, set the `SO_BROADCAST' sockopt
 
+    V6Only => BOOL
+            If defined, set the `IPV6_V6ONLY' sockopt when creating
+            `PF_INET6' sockets to the given value. If true, a listening-mode
+            socket will only listen on the `AF_INET6' addresses; if false it
+            will also accept connections from `AF_INET' addresses.
+
+            If not defined, the socket option will not be changed, and
+            default value set by the operating system will apply. For
+            repeatable behaviour across platforms it is recommended this
+            value always be defined for listening-mode sockets.
+
     Timeout This `IO::Socket::INET'-style argument is not currently
             supported. See the `IO::Socket::INET' INCOMPATIBILITES section
             below.

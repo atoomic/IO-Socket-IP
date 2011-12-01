@@ -6,12 +6,7 @@ use Test::More tests => 4;
 use IO::Socket::IP;
 
 use IO::Socket::INET;
-use Socket qw( SOCK_STREAM unpack_sockaddr_in );
-
-eval { Socket->import(qw( getaddrinfo )); 1 } or
-   eval { require Socket::GetAddrInfo;
-          Socket::GetAddrInfo->import(qw( getaddrinfo )); 1 } or
-   die $@;
+use Socket qw( SOCK_STREAM unpack_sockaddr_in getaddrinfo );
 
 {
    my $testserver = IO::Socket::INET->new(

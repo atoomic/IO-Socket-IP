@@ -2,15 +2,15 @@
 use ExtUtils::MakeMaker;
 WriteMakefile
 (
-          'NAME' => 'IO::Socket::IP',
-          'VERSION_FROM' => 'lib/IO/Socket/IP.pm',
-          'PREREQ_PM' => {
-                           'IO::Socket' => 0,
-                           'Socket' => '1.94_03',
-                           'Test::More' => 0
-                         },
-          'INSTALLDIRS' => 'site',
-          'EXE_FILES' => [],
-          'PL_FILES' => {}
-        )
+  'NAME' => 'IO::Socket::IP',
+  'VERSION_FROM' => 'lib/IO/Socket/IP.pm',
+  'PREREQ_PM' => {
+                   'IO::Socket' => 0,
+                   'Socket' => '1.95',
+                   'Test::More' => 0
+                 },
+  'INSTALLDIRS' => 'site',
+  'EXE_FILES' => [],
+  'PL_FILES' => {}
+)
 ;

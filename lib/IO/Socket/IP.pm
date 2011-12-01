@@ -9,20 +9,22 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.07_004';
+our $VERSION = '0.07_005';
 
 use Carp;
 
-use Socket 1.94_03 qw(
+use Socket 1.95 qw(
    getaddrinfo getnameinfo
    AF_INET
-   AI_PASSIVE
+   AI_PASSIVE AI_ADDRCONFIG
    IPPROTO_TCP IPPROTO_UDP
+   IPV6_V6ONLY
    NI_DGRAM NI_NUMERICHOST NI_NUMERICSERV
    SO_REUSEADDR SO_REUSEPORT SO_BROADCAST SO_ERROR
    SOCK_DGRAM SOCK_STREAM 
    SOL_SOCKET
 );
+my $AF_INET6 = eval { Socket::AF_INET6() }; # may not be defined
 use POSIX qw( dup2 );
 use Errno qw( EINPROGRESS );
 
@@ -121,8 +123,6 @@ sub import
    foreach ( @_ ) {
       if( $_ eq "-register" ) {
          $pkg->register_domain( AF_INET );
-
-         my $AF_INET6 = eval { Socket::AF_INET6() };
          $pkg->register_domain( $AF_INET6 ) if defined $AF_INET6;
       }
       else {
@@ -227,6 +227,17 @@ If true, set the C<SO_REUSEPORT> sockopt (not all OSes implement this sockopt)
 
 If true, set the C<SO_BROADCAST> sockopt
 
+=item V6Only => BOOL
+
+If defined, set the C<IPV6_V6ONLY> sockopt when creating C<PF_INET6> sockets
+to the given value. If true, a listening-mode socket will only listen on the
+C<AF_INET6> addresses; if false it will also accept connections from
+C<AF_INET> addresses.
+
+If not defined, the socket option will not be changed, and default value set
+by the operating system will apply. For repeatable behaviour across platforms
+it is recommended this value always be defined for listening-mode sockets.
+
 =item Timeout
 
 This C<IO::Socket::INET>-style argument is not currently supported. See the
@@ -317,6 +328,8 @@ sub _configure
    my @peerinfos;
 
    my @sockopts_enabled;
+
+   $hints{flags} = AI_ADDRCONFIG;
 
    if( defined $arg->{Family} ) {
       my $family = delete $arg->{Family};
@@ -410,6 +423,8 @@ sub _configure
    my $blocking = delete $arg->{Blocking};
    defined $blocking or $blocking = 1;
 
+   my $v6only = delete $arg->{V6Only};
+
    keys %$arg and croak "Unexpected keys - " . join( ", ", sort keys %$arg );
 
    my @infos;
@@ -445,6 +460,7 @@ sub _configure
    ${*$self}{io_socket_ip_idx} = -1;
 
    ${*$self}{io_socket_ip_sockopts} = \@sockopts_enabled;
+   ${*$self}{io_socket_ip_v6only} = $v6only;
    ${*$self}{io_socket_ip_listenqueue} = $listenqueue;
    ${*$self}{io_socket_ip_blocking} = $blocking;
 
@@ -473,6 +489,11 @@ sub setup
 
       foreach my $sockopt ( @{ ${*$self}{io_socket_ip_sockopts} } ) {
          $self->setsockopt( SOL_SOCKET, $sockopt, pack "i", 1 ) or ( $@ = "$!", return undef );
+      }
+
+      if( defined ${*$self}{io_socket_ip_v6only} and defined $AF_INET6 and $info->{family} == $AF_INET6 ) {
+         my $v6only = ${*$self}{io_socket_ip_v6only};
+         $self->setsockopt( Socket::IPPROTO_IPV6, IPV6_V6ONLY, pack "i", $v6only ) or ( $@ = "$!", return undef );
       }
 
       if( defined( my $addr = $info->{localaddr} ) ) {
