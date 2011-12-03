@@ -9,14 +9,14 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.07_005';
+our $VERSION = '0.07_006';
 
 use Carp;
 
 use Socket 1.95 qw(
    getaddrinfo getnameinfo
    AF_INET
-   AI_PASSIVE AI_ADDRCONFIG
+   AI_PASSIVE
    IPPROTO_TCP IPPROTO_UDP
    IPV6_V6ONLY
    NI_DGRAM NI_NUMERICHOST NI_NUMERICSERV
@@ -25,6 +25,7 @@ use Socket 1.95 qw(
    SOL_SOCKET
 );
 my $AF_INET6 = eval { Socket::AF_INET6() }; # may not be defined
+my $AI_ADDRCONFIG = eval { Socket::AI_ADDRCONFIG() } || 0;
 use POSIX qw( dup2 );
 use Errno qw( EINPROGRESS );
 
@@ -329,7 +330,7 @@ sub _configure
 
    my @sockopts_enabled;
 
-   $hints{flags} = AI_ADDRCONFIG;
+   $hints{flags} = $AI_ADDRCONFIG;
 
    if( defined $arg->{Family} ) {
       my $family = delete $arg->{Family};

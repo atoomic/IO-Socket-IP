@@ -6,8 +6,10 @@ use Test::More tests => 1;
 use IO::Socket::IP;
 use Socket 1.95 qw(
    PF_INET SOCK_STREAM IPPROTO_TCP pack_sockaddr_in INADDR_ANY
-   AI_PASSIVE AI_ADDRCONFIG
+   AI_PASSIVE
 );
+
+my $AI_ADDRCONFIG = eval { Socket::AI_ADDRCONFIG() } || 0;
 
 my @gai_args;
 my @gai_rets;
@@ -34,7 +36,7 @@ IO::Socket::IP->new( LocalPort => "zyxxyblarg(80)" );
 
 is_deeply( \@gai_args,
            [ 
-              [ undef, "zyxxyblarg", { flags => AI_PASSIVE|AI_ADDRCONFIG, socktype => SOCK_STREAM, protocol => IPPROTO_TCP } ],
-              [ undef, "80",         { flags => AI_PASSIVE|AI_ADDRCONFIG, socktype => SOCK_STREAM, protocol => IPPROTO_TCP } ],
+              [ undef, "zyxxyblarg", { flags => AI_PASSIVE|$AI_ADDRCONFIG, socktype => SOCK_STREAM, protocol => IPPROTO_TCP } ],
+              [ undef, "80",         { flags => AI_PASSIVE|$AI_ADDRCONFIG, socktype => SOCK_STREAM, protocol => IPPROTO_TCP } ],
            ],
            '@gai_args for LocalPort => "zyxxyblarg(80)"' );

@@ -1,5 +1,8 @@
 Revision history for IO-Socket-IP
 
+0.07_006 CHANGES:
+         * Fallback AI_ADDRCONFIG to 0 on OSes that don't implement it
+
 0.07_005 CHANGES:
          * Depend on Socket 1.95 now a full dual-life release has been made
          * Set the AI_ADDRCONFIG getaddrinfo hint
