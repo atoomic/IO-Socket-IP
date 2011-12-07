@@ -3,19 +3,11 @@
 use strict;
 use Test::More;
 
-# This test script uses IO::Socket::INET6 to test against, though the actual
-# module does not require it to be installed.
-# TODO: See if we can do this using only Socket6
-
 use IO::Socket::IP;
 use Socket;
 
-my $AF_INET6 = eval { require Socket  and Socket::AF_INET6()  } ||
-               eval { require Socket6 and Socket6::AF_INET6() } or
+my $AF_INET6 = eval { require Socket and Socket::AF_INET6() } or
    plan skip_all => "No AF_INET6";
-
-eval { require IO::Socket::INET6 } or
-   plan skip_all => "No IO::Socket::INET6";
 
 eval { IO::Socket::IP->new( LocalHost => "::1" ) } or
    plan skip_all => "Unable to bind to ::1";
@@ -23,16 +15,20 @@ eval { IO::Socket::IP->new( LocalHost => "::1" ) } or
 plan tests => 16;
 
 foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
-   my $testserver = IO::Socket::INET6->new(
-      ( $socktype eq "SOCK_STREAM" ? ( Listen => 1 ) : () ),
-      LocalHost => "::1",
-      Type      => Socket->$socktype,
-      Proto     => ( $socktype eq "SOCK_STREAM" ? "tcp" : "udp" ), # Because IO::Socket::INET6 is stupid and always presumes tcp
-   ) or die "Cannot listen on PF_INET6 - $@";
+   my $testserver = IO::Socket->new;
+   $testserver->socket( $AF_INET6, Socket->$socktype, 0 )
+      or die "Cannot socket() - $!";
+   $testserver->bind( Socket::pack_sockaddr_in6( 0, Socket::inet_pton( $AF_INET6, "::1" ) ) ) or
+      die "Cannot bind() - $!";
+   if( $socktype eq "SOCK_STREAM" ) {
+      $testserver->listen( 1 ) or die "Cannot listen() - $!";
+   }
+
+   my $testport = ( Socket::unpack_sockaddr_in6 $testserver->sockname )[0];
 
    my $socket = IO::Socket::IP->new(
       PeerHost    => "::1",
-      PeerService => $testserver->sockport,
+      PeerService => $testport,
       Type        => Socket->$socktype,
    );
 
@@ -48,16 +44,16 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
 
    ok( defined $testclient, "accepted test $socktype client" );
 
-   is_deeply( [ Socket6::unpack_sockaddr_in6( $socket->sockname ) ],
-              [ Socket6::unpack_sockaddr_in6( $testclient->peername ) ],
+   is_deeply( [ Socket::unpack_sockaddr_in6( $socket->sockname ) ],
+              [ Socket::unpack_sockaddr_in6( $testclient->peername ) ],
               "\$socket->sockname for $socktype" );
 
-   is_deeply( [ Socket6::unpack_sockaddr_in6( $socket->peername ) ],
-              [ Socket6::unpack_sockaddr_in6( $testclient->sockname ) ],
+   is_deeply( [ Socket::unpack_sockaddr_in6( $socket->peername ) ],
+              [ Socket::unpack_sockaddr_in6( $testclient->sockname ) ],
               "\$socket->peername for $socktype" );
 
-   is( $socket->peerhost, "::1",                 "\$socket->peerhost for $socktype" );
-   is( $socket->peerport, $testserver->sockport, "\$socket->peerport for $socktype" );
+   is( $socket->peerhost, "::1",     "\$socket->peerhost for $socktype" );
+   is( $socket->peerport, $testport, "\$socket->peerport for $socktype" );
 
    # Can't easily test the non-numeric versions without relying on the system's
    # ability to resolve the name "localhost"

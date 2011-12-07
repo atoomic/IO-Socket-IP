@@ -3,13 +3,13 @@
 use strict;
 use Test::More;
 
-use Socket;
+use Socket qw(PF_INET6 PF_INET IPPROTO_IPV6 IPV6_V6ONLY);
 use IO::Socket::IP;
 
 eval { IO::Socket::IP->new( LocalHost => "::1" ) } or
    plan skip_all => "Unable to bind to ::1";
 
-plan tests => 4;
+plan tests => 6;
 
 {
    my $listensock = IO::Socket::IP->new(
@@ -20,15 +20,18 @@ plan tests => 4;
       V6Only    => 1,
    ) or die "Cannot listen on PF_INET6 - $@";
 
-   my $testsock = IO::Socket::IP->new(
-      Listen    => 1,
-      Family    => PF_INET,
-      LocalPort => $listensock->sockport,
-      Type      => SOCK_STREAM,
-   );
+   is( $listensock->getsockopt( IPPROTO_IPV6, IPV6_V6ONLY ), 1, 'IPV6_V6ONLY is 1 on $listensock' );
 
-   ok( defined $testsock, 'Able to create PF_INET socket on PF_INET6 socket with V6Only true' );
-   is( $testsock->sockport, $listensock->sockport, 'PF_INET and PF_INET6 socket share local port' );
+   my $testsock = IO::Socket::IP->new(
+      Family   => PF_INET,
+      PeerHost => "127.0.0.1",
+      PeerPort => $listensock->sockport,
+      Type     => SOCK_STREAM,
+   );
+   my $err = "$@";
+
+   ok( !defined $testsock, 'Unable to connect PF_INET socket to PF_INET6 socket with V6Only true' );
+   like( $err, qr/Connection refused/, 'Socket creation fails with connection refused' );
 }
 
 {
@@ -42,14 +45,17 @@ plan tests => 4;
       V6Only    => 0,
    ) or die "Cannot listen on PF_INET6 - $@";
 
+   is( $listensock->getsockopt( IPPROTO_IPV6, IPV6_V6ONLY ), 0, 'IPV6_V6ONLY is 0 on $listensock' );
+
    my $testsock = IO::Socket::IP->new(
-      Listen    => 1,
-      Family    => PF_INET,
-      LocalPort => $listensock->sockport,
-      Type      => SOCK_STREAM,
+      Family   => PF_INET,
+      PeerHost => "127.0.0.1",
+      PeerPort => $listensock->sockport,
+      Type     => SOCK_STREAM,
    );
    my $err = "$@";
 
-   ok( !defined $testsock, 'Unable to create PF_INET socket on PF_INET6 socket with V6Only false' );
-   like( $err, qr/Address already in use/, 'Socket creation fails with address in use' );
+   ok( defined $testsock, 'Connected PF_INET socket to PF_INET6 socket with V6Only false' ) or
+      diag( "IO::Socket::IP->new failed - $err" );
+   is( $testsock->peerport, $listensock->sockport, 'Test socket connected to correct peer port' );
 }

@@ -1,5 +1,9 @@
 Revision history for IO-Socket-IP
 
+0.07_007 CHANGES:
+         * Better test for IPV6_V6ONLY for BSD systems, where concurrent
+           bind() is still allowed. Test by connect() failure instead.
+
 0.07_006 CHANGES:
          * Fallback AI_ADDRCONFIG to 0 on OSes that don't implement it
 
