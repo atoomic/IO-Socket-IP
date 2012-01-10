@@ -1,39 +1,22 @@
 Revision history for IO-Socket-IP
 
-0.07_007 CHANGES:
-         * Better test for IPV6_V6ONLY for BSD systems, where concurrent
-           bind() is still allowed. Test by connect() failure instead.
-
-0.07_006 CHANGES:
-         * Fallback AI_ADDRCONFIG to 0 on OSes that don't implement it
-
-0.07_005 CHANGES:
+0.08    CHANGES:
          * Depend on Socket 1.95 now a full dual-life release has been made
          * Set the AI_ADDRCONFIG getaddrinfo hint
-         * Added V6Only constructor argument to set IPV6_V6ONLY socket option
-
-0.07_004 CHANGES:
-         * Localise $1/$2 to placate [perl #67962]
          * Fix some spelling mistakes/typoes
-         * Require Socket 1.94_03, rather than dynamic
-           Socket-or-Socket::GetAddrInfo, now that Socket is dual-life.
-         * Simpler Build.PL now it has no dynamic dependencies
+         * MSWin32 fixes:
+            + MSWin32 uses select() exceptfds rather than writefds to report
+              on nonblocking connect() failure
+            + MSWin32 uses EWOULDBLOCK rather than EINPROGRESS to indicate
+              nonblocking connect()
 
-0.07_003 CHANGES:
+        BUGFIXES:
+         * Ensure ->socket protocol argument is always defined
          * Bugfix for (e.g.) NetBSD, which gets upset at protocol hint without
            socktype hint to getaddrinfo()
-         * Added configure_requires Module::Build
-
-0.07_002 CHANGES:
-         * MSWin32 uses select() exceptfds rather than writefds to report on
-           nonblocking connect() failure
          * Pass 'type' rather than 'proto' to constructor in t/11sockopts.t to
            avoid MSWin32 test failures
-         * Ensure ->socket protocol argument is always defined
-
-0.07_001 CHANGES:
-         * MSWin32 uses EWOULDBLOCK rather than EINPROGRESS to indicate
-           nonblocking connect()
+         * Localise $1/$2 to placate [perl #67962]
 
 0.07    CHANGES:
          * Prepare for Socket::getaddrinfo() in core; prefer it to

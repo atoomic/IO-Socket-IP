@@ -22,7 +22,6 @@ t/12port-fallback.t
 t/13addrinfo.t
 t/14fileno.t
 t/15io-socket.t
-t/16v6only.t
 t/20nonblocking-connect.t
 t/21nonblocking-connect-internet.t
 t/99pod.t
