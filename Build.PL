@@ -7,7 +7,7 @@ my $build = Module::Build->new(
    module_name => 'IO::Socket::IP',
    requires => {
       'IO::Socket' => 0,
-      'Socket' => '1.95',
+      'Socket' => '1.97',
    },
    build_requires => {
       'Test::More' => 0,

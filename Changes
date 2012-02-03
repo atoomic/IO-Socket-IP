@@ -1,5 +1,12 @@
 Revision history for IO-Socket-IP
 
+0.08_001 CHANGES:
+         * Attempt to implement IPV6_V6ONLY sockopt wrapper - not all OSes can
+           disable it, so detect and skip those
+         * Use new NIx_NOHOST and NIx_NOSERV flags to avoid redundant
+           getnameinfo() lookups when only one of host or service name is
+           required
+
 0.08    CHANGES:
          * Depend on Socket 1.95 now a full dual-life release has been made
          * Set the AI_ADDRCONFIG getaddrinfo hint

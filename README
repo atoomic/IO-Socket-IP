@@ -131,6 +131,34 @@ CONSTRUCTORS
     Broadcast => BOOL
             If true, set the `SO_BROADCAST' sockopt
 
+    V6Only => BOOL
+            If defined, set the `IPV6_V6ONLY' sockopt when creating
+            `PF_INET6' sockets to the given value. If true, a listening-mode
+            socket will only listen on the `AF_INET6' addresses; if false it
+            will also accept connections from `AF_INET' addresses.
+
+            If not defined, the socket option will not be changed, and
+            default value set by the operating system will apply. For
+            repeatable behaviour across platforms it is recommended this
+            value always be defined for listening-mode sockets.
+
+            Note that not all platforms support disabling this option. Some,
+            at least OpenBSD and MirBSD, will fail with `EINVAL' if you
+            attempt to disable it. To determine whether it is possible to
+            disable, you may use the class method
+
+             if( IO::Socket::IP->CAN_DISABLE_V6ONLY ) {
+                ...
+             }
+             else {
+                ...
+             }
+
+            If your platform does not support disabling this option but you
+            still want to listen for both `AF_INET' and `AF_INET6'
+            connections you will have to create two listening sockets, one
+            bound to each protocol.
+
     Timeout This `IO::Socket::INET'-style argument is not currently
             supported. See the `IO::Socket::INET' INCOMPATIBILITES section
             below.
@@ -315,22 +343,8 @@ NON-BLOCKING
         for a useable address from the results of the `getaddrinfo(3)' call.
 
 TODO
-    *   Cache the returns from `sockhost_service' and `peerhost_service' to
-        avoid double-lookup overhead in such code as
-
-          printf "Peer is %s:%d\n", $sock->peerhost, $sock->peerport;
-
     *   Investigate whether `POSIX::dup2' upsets BSD's `kqueue' watchers,
         and if so, consider what possible workarounds might be applied.
-
-BUGS
-    *   Nonblocking connect fails unit tests on MSWin32 smoke-testing
-        machines. The specifics of the failure are that `connect()' seems to
-        block anyway despite being asked not to, and that failure to connect
-        is not detected properly. I am as yet unsure why this is.
-
-        Blocking connect on MSWin32, and both blocking and nonblocking
-        connect on other platforms, all test OK on smoke testing.
 
 AUTHOR
     Paul Evans <leonerd@leonerd.org.uk>
