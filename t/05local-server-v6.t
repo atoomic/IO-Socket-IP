@@ -14,6 +14,11 @@ eval { IO::Socket::IP->new( LocalHost => "::1" ) } or
 
 plan tests => 26;
 
+# Unpack just ip6_addr and port because other fields might not match end to end
+sub unpack_sockaddr_in6_addrport { 
+   return ( Socket::unpack_sockaddr_in6( shift ) )[0,1];
+}
+
 foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    my $testserver = IO::Socket::IP->new(
       ( $socktype eq "SOCK_STREAM" ? ( Listen => 1 ) : () ),
@@ -46,12 +51,12 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    is( $testclient->sockdomain, $AF_INET6,         "\$testclient->sockdomain for $socktype" );
    is( $testclient->socktype,   Socket->$socktype, "\$testclient->socktype for $socktype" );
 
-   is_deeply( [ Socket::unpack_sockaddr_in6( $socket->sockname ) ],
-              [ Socket::unpack_sockaddr_in6( $testclient->peername ) ],
+   is_deeply( [ unpack_sockaddr_in6_addrport( $socket->sockname ) ],
+              [ unpack_sockaddr_in6_addrport( $testclient->peername ) ],
               "\$socket->sockname for $socktype" );
 
-   is_deeply( [ Socket::unpack_sockaddr_in6( $socket->peername ) ],
-              [ Socket::unpack_sockaddr_in6( $testclient->sockname ) ],
+   is_deeply( [ unpack_sockaddr_in6_addrport( $socket->peername ) ],
+              [ unpack_sockaddr_in6_addrport( $testclient->sockname ) ],
               "\$socket->peername for $socktype" );
 
    my $peerport = ( Socket::unpack_sockaddr_in6 $socket->peername )[0];
