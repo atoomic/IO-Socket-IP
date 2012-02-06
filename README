@@ -164,9 +164,11 @@ CONSTRUCTORS
             below.
 
     MultiHomed
-            This `IO::Socket::INET'-style argument is not currently
-            supported. See the `IO::Socket::INET' INCOMPATIBILITES section
-            below. However, the behaviour it enables is always performed by
+            This `IO::Socket::INET'-style argument is ignored, except if it
+            is defined but false. See the `IO::Socket::INET'
+            INCOMPATIBILITES section below.
+
+            However, the behaviour it enables is always performed by
             `IO::Socket::IP'.
 
     Blocking => BOOL
@@ -335,12 +337,15 @@ NON-BLOCKING
     does not understand it then the port number (`80') will be used instead.
 
 `IO::Socket::INET' INCOMPATIBILITES
-    *   The `Timeout' and `MultiHomed' constructor arguments are currently
-        not recognised.
+    *   The `Timeout' constructor argument is currently not recognised.
 
         The behaviour enabled by `MultiHomed' is in fact implemented by
         `IO::Socket::IP' as it is required to correctly support searching
         for a useable address from the results of the `getaddrinfo(3)' call.
+        The constructor will ignore the value of this argument, except if it
+        is defined but false. An exception is thrown in this case, because
+        that would request it disable the `getaddrinfo(3)' search behaviour
+        in the first place.
 
 TODO
     *   Investigate whether `POSIX::dup2' upsets BSD's `kqueue' watchers,

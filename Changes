@@ -1,5 +1,8 @@
 Revision history for IO-Socket-IP
 
+0.08_003 CHANGES:
+         * Ignore existing-but-undefined constructor arguments
+
 0.08_002 CHANGES:
          * Updates to unit tests for cygwin
 

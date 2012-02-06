@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.08_002';
+our $VERSION = '0.08_003';
 
 use Carp;
 
@@ -283,9 +283,10 @@ C<IO::Socket::INET> INCOMPATIBILITES section below.
 
 =item MultiHomed
 
-This C<IO::Socket::INET>-style argument is not currently supported. See the
-C<IO::Socket::INET> INCOMPATIBILITES section below. However, the behaviour it
-enables is always performed by C<IO::Socket::IP>.
+This C<IO::Socket::INET>-style argument is ignored, except if it is defined
+but false. See the C<IO::Socket::INET> INCOMPATIBILITES section below. 
+
+However, the behaviour it enables is always performed by C<IO::Socket::IP>.
 
 =item Blocking => BOOL
 
@@ -367,19 +368,18 @@ sub _configure
 
    $hints{flags} = $AI_ADDRCONFIG;
 
-   if( defined $arg->{Family} ) {
-      my $family = delete $arg->{Family};
+   # Check for definedness of args, but delete them anyway even if they're
+   # not defined. Then the only remaining keys will be unrecognised ones.
+
+   if( defined( my $family = delete $arg->{Family} ) ) {
       $hints{family} = $family;
    }
 
-   if( defined $arg->{Type} ) {
-      my $type = delete $arg->{Type};
+   if( defined( my $type = delete $arg->{Type} ) ) {
       $hints{socktype} = $type;
    }
 
-   if( defined $arg->{Proto} ) {
-      my $proto = delete $arg->{Proto};
-
+   if( defined( my $proto = delete $arg->{Proto} ) ) {
       unless( $proto =~ m/^\d+$/ ) {
          my $protonum = getprotobyname( $proto );
          defined $protonum or croak "Unrecognised protocol $proto";
@@ -404,12 +404,13 @@ sub _configure
    }
 
    if( my $info = delete $arg->{LocalAddrInfo} ) {
+      ref $info eq "ARRAY" or croak "Expected 'LocalAddrInfo' to be an ARRAY ref";
       @localinfos = @$info;
    }
    elsif( defined $arg->{LocalHost} or defined $arg->{LocalService} ) {
       # Either may be undef
-      my $host = delete $arg->{LocalHost};
-      my $service = delete $arg->{LocalService};
+      my $host = $arg->{LocalHost};
+      my $service = $arg->{LocalService};
 
       local $1; # Placate a taint-related bug; [perl #67962]
       defined $service and $service =~ s/\((\d+)\)$// and
@@ -425,8 +426,11 @@ sub _configure
 
       $err and ( $@ = "$err", return );
    }
+   delete $arg->{LocalHost};
+   delete $arg->{LocalService};
 
    if( my $info = delete $arg->{PeerAddrInfo} ) {
+      ref $info eq "ARRAY" or croak "Expected 'PeerAddrInfo' to be an ARRAY ref";
       @peerinfos = @$info;
    }
    elsif( defined $arg->{PeerHost} or defined $arg->{PeerService} ) {
@@ -447,6 +451,8 @@ sub _configure
 
       $err and ( $@ = "$err", return );
    }
+   delete $arg->{PeerHost};
+   delete $arg->{PeerService};
 
    my @sockopts_enabled;
    push @sockopts_enabled, SO_REUSEADDR if delete $arg->{ReuseAddr};
@@ -461,6 +467,14 @@ sub _configure
    defined $blocking or $blocking = 1;
 
    my $v6only = delete $arg->{V6Only};
+
+   # IO::Socket::INET defines this key. IO::Socket::IP always implements the
+   # behaviour it requests, so we can ignore it, unless the caller is for some
+   # reason asking to disable it.
+   if( defined $arg->{MultiHomed} and !$arg->{MultiHomed} ) {
+      croak "Cannot disable the MultiHomed parameter";
+   }
+   delete $arg->{MultiHomed};
 
    keys %$arg and croak "Unexpected keys - " . join( ", ", sort keys %$arg );
 
@@ -825,12 +839,14 @@ not understand it then the port number (C<80>) will be used instead.
 
 =item *
 
-The C<Timeout> and C<MultiHomed> constructor arguments are currently not
-recognised.
+The C<Timeout> constructor argument is currently not recognised.
 
 The behaviour enabled by C<MultiHomed> is in fact implemented by
 C<IO::Socket::IP> as it is required to correctly support searching for a
-useable address from the results of the C<getaddrinfo(3)> call.
+useable address from the results of the C<getaddrinfo(3)> call. The
+constructor will ignore the value of this argument, except if it is defined
+but false. An exception is thrown in this case, because that would request it
+disable the C<getaddrinfo(3)> search behaviour in the first place.
 
 =back
 
