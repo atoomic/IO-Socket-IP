@@ -11,6 +11,10 @@ eval { IO::Socket::IP->new( LocalHost => "::1" ) } or
 
 plan tests => 6;
 
+# Don't be locale-sensitive
+$! = Errno::ECONNREFUSED;
+my $ECONNREFUSED_STR = "$!";
+
 {
    my $listensock = IO::Socket::IP->new(
       Listen    => 1,
@@ -31,7 +35,7 @@ plan tests => 6;
    my $err = "$@";
 
    ok( !defined $testsock, 'Unable to connect PF_INET socket to PF_INET6 socket with V6Only true' );
-   like( $err, qr/Connection refused/, 'Socket creation fails with connection refused' );
+   like( $err, qr/\Q$ECONNREFUSED_STR/, 'Socket creation fails with connection refused' );
 }
 
 SKIP: {
