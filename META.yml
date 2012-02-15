@@ -14,10 +14,10 @@ name: IO-Socket-IP
 provides:
   IO::Socket::IP:
     file: lib/IO/Socket/IP.pm
-    version: 0.08_004
+    version: 0.08_005
 requires:
   IO::Socket: 0
   Socket: 1.97
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.08_004
+version: 0.08_005

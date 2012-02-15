@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.08_004';
+our $VERSION = '0.08_005';
 
 use Carp;
 
@@ -424,7 +424,11 @@ sub _configure
          ( $err, @localinfos ) = getaddrinfo( $host, $fallback_port, \%localhints );
       }
 
-      $err and ( $@ = "$err", return );
+      if( $err ) {
+         $@ = "$err";
+         $! = EINVAL;
+         return;
+      }
    }
    delete $arg->{LocalHost};
    delete $arg->{LocalService};
@@ -449,7 +453,11 @@ sub _configure
          ( $err, @peerinfos ) = getaddrinfo( $host, $fallback_port, \%hints );
       }
 
-      $err and ( $@ = "$err", return );
+      if( $err ) {
+         $@ = "$err";
+         $! = EINVAL;
+         return;
+      }
    }
    delete $arg->{PeerHost};
    delete $arg->{PeerService};

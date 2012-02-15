@@ -1,5 +1,8 @@
 Revision history for IO-Socket-IP
 
+0.08_005 CHANGES:
+         * Ensure that errno gets set to EINVAL on getaddrinfo() failures
+
 0.08_004 CHANGES:
          * Avoid locale-specific error message testing of $!
 
