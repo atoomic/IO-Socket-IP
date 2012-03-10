@@ -208,7 +208,7 @@ METHODS
     call `getnameinfo(3)' only once.
 
   $addr = $sock->sockhost
-    Return the numeric form of the local address
+    Return the numeric form of the local address as a textual representation
 
   $port = $sock->sockport
     Return the numeric form of the local port number
@@ -218,6 +218,9 @@ METHODS
 
   $service = $sock->sockservice
     Return the resolved name of the local port number
+
+  $addr = $sock->sockaddr
+    Return the local address as a binary octet string
 
   ( $host, $service ) = $sock->peerhost_service( $numeric )
     Returns the hostname and service name of the peer address (that is, the
@@ -230,7 +233,7 @@ METHODS
     call `getnameinfo(3)' only once.
 
   $addr = $sock->peerhost
-    Return the numeric form of the peer address
+    Return the numeric form of the peer address as a textual representation
 
   $port = $sock->peerport
     Return the numeric form of the peer port number
@@ -240,6 +243,9 @@ METHODS
 
   $service = $sock->peerservice
     Return the resolved name of the peer port number
+
+  $addr = $peer->peeraddr
+    Return the peer address as a binary octet string
 
 NON-BLOCKING
     If the constructor is passed a defined but false value for the

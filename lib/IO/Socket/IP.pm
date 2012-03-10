@@ -9,12 +9,13 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.08_005';
+our $VERSION = '0.09';
 
 use Carp;
 
 use Socket 1.97 qw(
    getaddrinfo getnameinfo
+   sockaddr_family
    AF_INET
    AI_PASSIVE
    IPPROTO_TCP IPPROTO_UDP
@@ -142,7 +143,7 @@ sub import
    {
       return $can_disable_v6only if defined $can_disable_v6only;
 
-      socket my $testsock, Socket::PF_INET6, SOCK_STREAM, 0 or
+      socket my $testsock, Socket::PF_INET6(), SOCK_STREAM, 0 or
          die "Cannot socket(PF_INET6) - $!";
 
       if( setsockopt $testsock, IPPROTO_IPV6, IPV6_V6ONLY, 0 ) {
@@ -627,6 +628,22 @@ sub _get_host_service
    return ( $host, $service );
 }
 
+sub _unpack_sockaddr
+{
+   my ( $addr ) = @_;
+   my $family = sockaddr_family $addr;
+
+   if( $family == AF_INET ) {
+      return ( Socket::unpack_sockaddr_in( $addr ) )[1];
+   }
+   elsif( defined $AF_INET6 and $family == $AF_INET6 ) {
+      return ( Socket::unpack_sockaddr_in6( $addr ) )[1];
+   }
+   else {
+      croak "Unrecognised address family $family";
+   }
+}
+
 =head2 ( $host, $service ) = $sock->sockhost_service( $numeric )
 
 Returns the hostname and service name of the local address (that is, the
@@ -652,7 +669,7 @@ sub sockhost_service
 
 =head2 $addr = $sock->sockhost
 
-Return the numeric form of the local address
+Return the numeric form of the local address as a textual representation
 
 =head2 $port = $sock->sockport
 
@@ -673,6 +690,14 @@ sub sockport { my $self = shift; ( $self->_get_host_service( $self->sockname, NI
 
 sub sockhostname { my $self = shift; ( $self->_get_host_service( $self->sockname, 0, NIx_NOSERV ) )[0] }
 sub sockservice  { my $self = shift; ( $self->_get_host_service( $self->sockname, 0, NIx_NOHOST ) )[1] }
+
+=head2 $addr = $sock->sockaddr
+
+Return the local address as a binary octet string
+
+=cut
+
+sub sockaddr { my $self = shift; _unpack_sockaddr $self->sockname }
 
 =head2 ( $host, $service ) = $sock->peerhost_service( $numeric )
 
@@ -697,7 +722,7 @@ sub peerhost_service
 
 =head2 $addr = $sock->peerhost
 
-Return the numeric form of the peer address
+Return the numeric form of the peer address as a textual representation
 
 =head2 $port = $sock->peerport
 
@@ -718,6 +743,14 @@ sub peerport { my $self = shift; ( $self->_get_host_service( $self->peername, NI
 
 sub peerhostname { my $self = shift; ( $self->_get_host_service( $self->peername, 0, NIx_NOSERV ) )[0] }
 sub peerservice  { my $self = shift; ( $self->_get_host_service( $self->peername, 0, NIx_NOHOST ) )[1] }
+
+=head2 $addr = $peer->peeraddr
+
+Return the peer address as a binary octet string
+
+=cut
+
+sub peeraddr { my $self = shift; _unpack_sockaddr $self->peername }
 
 # This unbelievably dodgy hack works around the bug that IO::Socket doesn't do
 # it

@@ -1,23 +1,19 @@
 Revision history for IO-Socket-IP
 
-0.08_005 CHANGES:
-         * Ensure that errno gets set to EINVAL on getaddrinfo() failures
-
-0.08_004 CHANGES:
-         * Avoid locale-specific error message testing of $!
-
-0.08_003 CHANGES:
-         * Ignore existing-but-undefined constructor arguments
-
-0.08_002 CHANGES:
-         * Updates to unit tests for cygwin
-
-0.08_001 CHANGES:
+0.09    CHANGES:
          * Attempt to implement IPV6_V6ONLY sockopt wrapper - not all OSes can
            disable it, so detect and skip those
+         * Provide ->sockaddr and ->peeraddr convenience accessors, same as
+           IO::Socket::INET (RT75071)
          * Use new NIx_NOHOST and NIx_NOSERV flags to avoid redundant
            getnameinfo() lookups when only one of host or service name is
            required
+         * Ensure that errno gets set to EINVAL on getaddrinfo() failures
+
+        BUGFIXES:
+         * Ignore existing-but-undefined constructor arguments
+         * Avoid locale-specific error message testing of $!
+         * Updates to unit tests for cygwin
 
 0.08    CHANGES:
          * Depend on Socket 1.95 now a full dual-life release has been made

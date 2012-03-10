@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 16;
+use Test::More tests => 20;
 
 use IO::Socket::IP;
 
@@ -44,6 +44,10 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
 
    is( $socket->peerhost, "127.0.0.1",           "\$socket->peerhost for $socktype" );
    is( $socket->peerport, $testserver->sockport, "\$socket->peerport for $socktype" );
+
+   # Unpack just so it pretty prints without wrecking the terminal if it fails
+   is( unpack("H*", $socket->sockaddr), "7f000001", "\$socket->sockaddr for $socktype" );
+   is( unpack("H*", $socket->peeraddr), "7f000001", "\$socket->peeraddr for $socktype" );
 
    # Can't easily test the non-numeric versions without relying on the system's
    # ability to resolve the name "localhost"

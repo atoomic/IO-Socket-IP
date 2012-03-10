@@ -12,7 +12,7 @@ my $AF_INET6 = eval { require Socket and Socket::AF_INET6() } or
 eval { IO::Socket::IP->new( LocalHost => "::1" ) } or
    plan skip_all => "Unable to bind to ::1";
 
-plan tests => 16;
+plan tests => 20;
 
 # Unpack just ip6_addr and port because other fields might not match end to end
 sub unpack_sockaddr_in6_addrport { 
@@ -59,6 +59,10 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
 
    is( $socket->peerhost, "::1",     "\$socket->peerhost for $socktype" );
    is( $socket->peerport, $testport, "\$socket->peerport for $socktype" );
+
+   # Unpack just so it pretty prints without wrecking the terminal if it fails
+   is( unpack("H*", $socket->sockaddr), "0000"x7 . "0001", "\$socket->sockaddr for $socktype" );
+   is( unpack("H*", $socket->peeraddr), "0000"x7 . "0001", "\$socket->peeraddr for $socktype" );
 
    # Can't easily test the non-numeric versions without relying on the system's
    # ability to resolve the name "localhost"

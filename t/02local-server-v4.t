@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 26;
+use Test::More tests => 30;
 
 use IO::Socket::IP;
 
@@ -51,4 +51,8 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
 
    is( $testclient->sockport, $socket->peerport, "\$testclient->sockport for $socktype" );
    is( $testclient->peerport, $socket->sockport, "\$testclient->peerport for $socktype" );
+
+   # Unpack just so it pretty prints without wrecking the terminal if it fails
+   is( unpack("H*", $testclient->sockaddr), "7f000001", "\$testclient->sockaddr for $socktype" );
+   is( unpack("H*", $testclient->peeraddr), "7f000001", "\$testclient->peeraddr for $socktype" );
 }
