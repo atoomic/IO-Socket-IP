@@ -1,5 +1,10 @@
 Revision history for IO-Socket-IP
 
+0.10    CHANGES:
+         * Allow specifying other getaddrinfo flags using GetAddrInfoFlags
+           constructor argument (RT75783)
+         * Provide a convenient hostname+port string splitting utility method
+
 0.09    CHANGES:
          * Attempt to implement IPV6_V6ONLY sockopt wrapper - not all OSes can
            disable it, so detect and skip those

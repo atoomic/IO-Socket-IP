@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 use Carp;
 
@@ -233,6 +233,13 @@ C<'udp'>,C<IPPROTO_UDP>). Normally this will be left undefined, and either
 C<getaddrinfo> or the kernel will choose an appropriate value. May be given
 either in string name or numeric form.
 
+=item GetAddrInfoFlags => INT
+
+More flags to pass to the C<getaddrinfo()> function. These flags will be
+combined with C<AI_ADDRCONFIG>, and if the C<Listen> argument is given,
+C<AI_PASSIVE>. For more information see the documentation about
+C<getaddrinfo()> in the L<Socket> module.
+
 =item Listen => INT
 
 If defined, puts the socket into listening mode where new connections can be
@@ -345,13 +352,9 @@ sub configure
       my $service = $type . 'Service';
 
       if (exists $arg->{$host} && !exists $arg->{$service}) {
-         local $_ = $arg->{$host};
-         defined or next;
-         local ( $1, $2 ); # Placate a taint-related bug; [perl #67962]
-         if (/\A\[($IPv6_re)\](?::([^\s:]*))?\z/o || /\A([^\s:]*):([^\s:]*)\z/) {
-            $arg->{$host}    = $1;
-            $arg->{$service} = $2 if defined $2 && length $2;
-         }
+         defined $arg->{$host} or next;
+         ( $arg->{$host}, my $s ) = $self->split_addr( $arg->{$host} );
+         $arg->{$service} = $s if defined $s;
       }
    }
 
@@ -367,7 +370,7 @@ sub _configure
    my @localinfos;
    my @peerinfos;
 
-   $hints{flags} = $AI_ADDRCONFIG;
+   $hints{flags} = ( delete $arg->{GetAddrInfoFlags} || 0 ) | $AI_ADDRCONFIG;
 
    # Check for definedness of args, but delete them anyway even if they're
    # not defined. Then the only remaining keys will be unrecognised ones.
@@ -846,6 +849,8 @@ C<PF_INET6>.
 For another example using C<IO::Poll> and C<Net::LibAsyncNS>, see the
 F<examples/nonblocking_libasyncns.pl> file in the module distribution.
 
+=cut
+
 =head1 C<PeerHost> AND C<LocalHost> PARSING
 
 To support the C<IO::Socket::INET> API, the host and port information may be
@@ -873,6 +878,42 @@ service name and number, in a form such as
 
 In this case, the name (C<http>) will be tried first, but if the resolver does
 not understand it then the port number (C<80>) will be used instead.
+
+=head2 ( $host, $port ) = IO::Socket::IP->split_addr( $addr )
+
+Utility method that provides the parsing functionality described above.
+Returns a 2-element list, containing either the split hostname and port
+description if it could be parsed, or the given address and C<undef> if it was
+not recognised.
+
+ IO::Socket::IP->split_addr( "hostname:http" )
+                              # ( "hostname",  "http" )
+
+ IO::Socket::IP->split_addr( "192.0.2.1:80" )
+                              # ( "192.0.2.1", "80"   )
+
+ IO::Socket::IP->split_addr( "[2001:db8::1]:80" )
+                              # ( "2001:db8::1", "80" )
+
+ IO::Socket::IP->split_addr( "something.else" )
+                              # ( "something.else", undef )
+
+=cut
+
+sub split_addr
+{
+   shift;
+   my ( $addr ) = @_;
+
+   local ( $1, $2 ); # Placate a taint-related bug; [perl #67962]
+   if( $addr =~ m/\A\[($IPv6_re)\](?::([^\s:]*))?\z/ or
+       $addr =~ m/\A([^\s:]*):([^\s:]*)\z/ ) {
+      return ( $1, $2 ) if defined $2 and length $2;
+      return ( $1, undef );
+   }
+
+   return ( $addr, undef );
+}
 
 =head1 C<IO::Socket::INET> INCOMPATIBILITES
 

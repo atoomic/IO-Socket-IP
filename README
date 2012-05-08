@@ -116,6 +116,12 @@ CONSTRUCTORS
             choose an appropriate value. May be given either in string name
             or numeric form.
 
+    GetAddrInfoFlags => INT
+            More flags to pass to the `getaddrinfo()' function. These flags
+            will be combined with `AI_ADDRCONFIG', and if the `Listen'
+            argument is given, `AI_PASSIVE'. For more information see the
+            documentation about `getaddrinfo()' in the Socket module.
+
     Listen => INT
             If defined, puts the socket into listening mode where new
             connections can be accepted using the `accept' method. The value
@@ -341,6 +347,24 @@ NON-BLOCKING
 
     In this case, the name (`http') will be tried first, but if the resolver
     does not understand it then the port number (`80') will be used instead.
+
+  ( $host, $port ) = IO::Socket::IP->split_addr( $addr )
+    Utility method that provides the parsing functionality described above.
+    Returns a 2-element list, containing either the split hostname and port
+    description if it could be parsed, or the given address and `undef' if
+    it was not recognised.
+
+     IO::Socket::IP->split_addr( "hostname:http" )
+                                  # ( "hostname",  "http" )
+
+     IO::Socket::IP->split_addr( "192.0.2.1:80" )
+                                  # ( "192.0.2.1", "80"   )
+
+     IO::Socket::IP->split_addr( "[2001:db8::1]:80" )
+                                  # ( "2001:db8::1", "80" )
+
+     IO::Socket::IP->split_addr( "something.else" )
+                                  # ( "something.else", undef )
 
 `IO::Socket::INET' INCOMPATIBILITES
     *   The `Timeout' constructor argument is currently not recognised.

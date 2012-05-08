@@ -47,6 +47,22 @@ my @tests = (
    [ [ LocalHost => undef       ], { LocalHost => undef                                   } ],
 );
 
-plan tests => scalar(@tests);
+plan tests => 4 + scalar(@tests);
+
+is_deeply( [ IO::Socket::IP->split_addr( "hostname:http" ) ],
+           [ "hostname",  "http" ],
+           "split_addr hostname:http" );
+
+is_deeply( [ IO::Socket::IP->split_addr( "192.0.2.1:80" ) ],
+           [ "192.0.2.1", "80"   ],
+           "split_addr 192.0.2.1:80" );
+
+is_deeply( [ IO::Socket::IP->split_addr( "[2001:db8::1]:80" ) ],
+           [ "2001:db8::1", "80" ],
+           "split_addr [2001:db8::1]:80" );
+
+is_deeply( [ IO::Socket::IP->split_addr( "something.else" ) ],
+           [ "something.else", undef ],
+           "split_addr something.else" );
 
 arguments_is(@$_) for @tests;
