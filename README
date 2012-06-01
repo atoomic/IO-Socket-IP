@@ -184,7 +184,8 @@ CONSTRUCTORS
 
     If neither `Type' nor `Proto' hints are provided, a default of
     `SOCK_STREAM' and `IPPROTO_TCP' respectively will be set, to maintain
-    compatibility with `IO::Socket::INET'.
+    compatibility with `IO::Socket::INET'. Other named arguments that are
+    not recognised are ignored.
 
     If the constructor fails, it will set `$@' to an appropriate error
     message; this may be from `$!' or it may be some other string; not every
