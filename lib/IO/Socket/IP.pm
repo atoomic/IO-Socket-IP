@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 use Carp;
 
@@ -520,9 +520,9 @@ sub _configure
 
    ${*$self}{io_socket_ip_errors} = [ undef, undef, undef ];
 
-   if( $blocking ) {
-      $self->setup or return undef;
-   }
+   # ->setup is allowed to return false in nonblocking mode
+   $self->setup or !$blocking or return undef;
+
    return $self;
 }
 
@@ -594,11 +594,15 @@ sub connect
 
    return CORE::connect( $self, $_[0] ) if @_;
 
-   $! = 0, return 1 if $self->fileno and defined $self->peername;
+   if( defined $self->fileno ) {
+      # A connect call may have just finished. It succeeded if we have a peername
+      $! = 0, return 1 if defined $self->peername;
 
-   if( $self->fileno ) {
-      # A connect has just failed, get its error value
-      ${*$self}{io_socket_ip_errors}[0] = $self->getsockopt( SOL_SOCKET, SO_ERROR );
+      # If not, it may have just failed. Get its error value
+      my $errno = ${*$self}{io_socket_ip_errors}[0] = $self->getsockopt( SOL_SOCKET, SO_ERROR );
+
+      # If errno is 0 then it hasn't failed yet, so keep polling
+      $! = EINPROGRESS, return 0 if !$errno;
    }
 
    return $self->setup;

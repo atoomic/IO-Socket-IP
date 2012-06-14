@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 8;
+use Test::More tests => 9;
 
 use IO::Socket::IP;
 
@@ -23,6 +23,8 @@ my $socket = IO::Socket::IP->new(
 
 ok( defined $socket, 'IO::Socket::IP->new( Blocking => 0 ) constructs a socket' ) or
    diag( "  error was $@" );
+
+ok( defined $socket->fileno, '$socket has a fileno immediately after construction' );
 
 while( !$socket->connect and ( $! == EINPROGRESS || $! == EWOULDBLOCK ) ) {
    my $wvec = '';

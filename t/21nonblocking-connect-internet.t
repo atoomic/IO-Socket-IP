@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 10;
+use Test::More tests => 12;
 
 use IO::Socket::IP;
 
@@ -29,6 +29,8 @@ SKIP: {
 
    ok( defined $socket, "defined \$socket for $test_host:$test_good_port" ) or
       diag( "  error was $@" );
+
+   ok( defined $socket->fileno, '$socket has fileno' );
 
    # This and test is required to placate a warning IO::Socket would otherwise
    # throw; https://rt.cpan.org/Ticket/Display.html?id=63052
@@ -71,6 +73,8 @@ SKIP: {
 
    ok( defined $socket, "defined \$socket for $test_host:$test_bad_port" ) or
       diag( "  error was $@" );
+
+   ok( defined $socket->fileno, '$socket has fileno' );
 
    ok( not( $socket->opened and $socket->connected ), '$socket not yet connected' );
 
