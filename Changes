@@ -1,5 +1,9 @@
 Revision history for IO-Socket-IP
 
+0.13    BUGFIXES:
+         * Updated test skip counts in unit tests so they match the number of
+           tests actually skipped
+
 0.12    CHANGES:
          * Ensure that all instances have a defined fileno after construction,
            even in non-blocking mode (RT77726)
