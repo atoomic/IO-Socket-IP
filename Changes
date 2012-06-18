@@ -1,5 +1,8 @@
 Revision history for IO-Socket-IP
 
+0.14    BUGFIXES:
+         * Second attempt at fixing test skip counts
+
 0.13    BUGFIXES:
          * Updated test skip counts in unit tests so they match the number of
            tests actually skipped
