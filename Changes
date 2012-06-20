@@ -1,5 +1,9 @@
 Revision history for IO-Socket-IP
 
+0.15    BUGFIXES:
+         * (Hopefully) improved ->connect logic for better MSWin32 support
+         * Skip testing AI_NUMERICSERV on OSes that don't support it
+
 0.14    BUGFIXES:
          * Second attempt at fixing test skip counts
 

@@ -32,9 +32,7 @@ SKIP: {
 
    ok( defined $socket->fileno, '$socket has fileno' );
 
-   # This and test is required to placate a warning IO::Socket would otherwise
-   # throw; https://rt.cpan.org/Ticket/Display.html?id=63052
-   ok( not( $socket->opened and $socket->connected ), '$socket not yet connected' );
+   ok( !$socket->connected, '$socket not yet connected' );
 
    my $selectcount = 0;
 
@@ -76,7 +74,7 @@ SKIP: {
 
    ok( defined $socket->fileno, '$socket has fileno' );
 
-   ok( not( $socket->opened and $socket->connected ), '$socket not yet connected' );
+   ok( !$socket->connected, '$socket not yet connected' );
 
    my $selectcount = 0;
 

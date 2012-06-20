@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 use Carp;
 
@@ -28,7 +28,7 @@ use Socket 1.97 qw(
 my $AF_INET6 = eval { Socket::AF_INET6() }; # may not be defined
 my $AI_ADDRCONFIG = eval { Socket::AI_ADDRCONFIG() } || 0;
 use POSIX qw( dup2 );
-use Errno qw( EINVAL EINPROGRESS );
+use Errno qw( EINVAL EINPROGRESS EISCONN );
 
 use constant HAVE_MSWIN32 => ( $^O eq "MSWin32" );
 
@@ -565,7 +565,10 @@ sub setup
             return 1;
          }
 
-         return 0 if $! == EINPROGRESS or HAVE_MSWIN32 && $! == Errno::EWOULDBLOCK();
+         if( $! == EINPROGRESS or HAVE_MSWIN32 && $! == Errno::EWOULDBLOCK() ) {
+            ${*$self}{io_socket_ip_connect_in_progress} = 1;
+            return 0;
+         }
 
          ${*$self}{io_socket_ip_errors}[0] = $!;
          next;
@@ -594,18 +597,38 @@ sub connect
 
    return CORE::connect( $self, $_[0] ) if @_;
 
-   if( defined $self->fileno ) {
-      # A connect call may have just finished. It succeeded if we have a peername
-      $! = 0, return 1 if defined $self->peername;
+   return 1 if !${*$self}{io_socket_ip_connect_in_progress};
 
-      # If not, it may have just failed. Get its error value
-      my $errno = ${*$self}{io_socket_ip_errors}[0] = $self->getsockopt( SOL_SOCKET, SO_ERROR );
-
-      # If errno is 0 then it hasn't failed yet, so keep polling
-      $! = EINPROGRESS, return 0 if !$errno;
+   # See if a connect attempt has just failed with an error
+   if( my $errno = $self->getsockopt( SOL_SOCKET, SO_ERROR ) ) {
+      delete ${*$self}{io_socket_ip_connect_in_progress};
+      ${*$self}{io_socket_ip_errors}[0] = $! = $errno;
+      return $self->setup;
    }
 
-   return $self->setup;
+   # No error, so either connect is still in progress, or has completed
+   # successfully. We can tell by trying to connect() again; either it will
+   # succeed or we'll get EISCONN (connected successfully), or EALREADY
+   # (still in progress). This even works on MSWin32.
+   my $addr = ${*$self}{io_socket_ip_infos}[${*$self}{io_socket_ip_idx}]{peeraddr};
+
+   if( $self->connect( $addr ) or $! == EISCONN ) {
+      delete ${*$self}{io_socket_ip_connect_in_progress};
+      $! = 0;
+      return 1;
+   }
+   else {
+      $! = EINPROGRESS;
+      return 0;
+   }
+}
+
+sub connected
+{
+   my $self = shift;
+   return defined $self->fileno &&
+          !${*$self}{io_socket_ip_connect_in_progress} &&
+          defined $self->peername;
 }
 
 =head1 METHODS
