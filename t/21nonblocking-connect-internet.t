@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 12;
+use Test::More tests => 11;
 
 use IO::Socket::IP;
 
@@ -59,8 +59,8 @@ SKIP: {
       PeerHost => $test_host,
       PeerPort => $test_bad_port,
       Type     => SOCK_STREAM,
-   ) and skip "Connecting to $test_host:$test_bad_port succeeds", 6;
-   $! == ECONNREFUSED or skip "Connecting to $test_host:$test_bad_port doesn't give ECONNREFUSED", 6;
+   ) and skip "Connecting to $test_host:$test_bad_port succeeds", 5;
+   $! == ECONNREFUSED or skip "Connecting to $test_host:$test_bad_port doesn't give ECONNREFUSED", 5;
 
    my $socket = IO::Socket::IP->new(
       PeerHost    => $test_host,
@@ -96,6 +96,4 @@ SKIP: {
       diag( "  dollarbang = $dollarbang" );
 
    ok( $selectcount > 0, '->connect had to select() at least once' );
-
-   ok( !$socket->opened, '$socket is not even opened' );
 }

@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.15';
+our $VERSION = '0.16';
 
 use Carp;
 
@@ -576,8 +576,6 @@ sub setup
 
       return 1;
    }
-
-   $self->close;
 
    # Pick the most appropriate error, stringified
    $! = ( grep defined, @{ ${*$self}{io_socket_ip_errors}} )[0];

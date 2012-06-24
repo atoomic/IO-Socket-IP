@@ -41,11 +41,14 @@ my $socket = IO::Socket::IP->new(
 
 $poll->mask( $socket => POLLOUT );
 
-while( !$socket->connect and $! == EINPROGRESS ) {
+while(1) {
    $poll->poll( undef );
-}
 
-die "Cannot connect - $!" if $!;
+   if( $poll->events( $socket ) & POLLOUT ) {
+      last if $socket->connect;
+      die "Cannot connect - $!" unless $! == EINPROGRESS;
+   }
+}
 
 printf STDERR "Connected to %s:%s\n", $socket->peerhost_service;
 

@@ -1,5 +1,9 @@
 Revision history for IO-Socket-IP
 
+0.16    BUGFIXES:
+         * Don't ->close after all connect attempts fail, because
+           IO::Socket::INET doesn't do that
+
 0.15    BUGFIXES:
          * (Hopefully) improved ->connect logic for better MSWin32 support
          * Skip testing AI_NUMERICSERV on OSes that don't support it
