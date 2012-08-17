@@ -1,5 +1,13 @@
 Revision history for IO-Socket-IP
 
+0.17    CHANGES:
+         * Only pass AI_ADDRCONFIG as getaddrinfo() flag if no other flags
+           specified, so the caller can disable it if required.
+        
+        BUGFIXES:
+         * Don't count select() invocations during nonblocking unit test
+           because this is too unreliable and races with the kernel/TCP stack
+
 0.16    BUGFIXES:
          * Don't ->close after all connect attempts fail, because
            IO::Socket::INET doesn't do that

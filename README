@@ -117,10 +117,12 @@ CONSTRUCTORS
             or numeric form.
 
     GetAddrInfoFlags => INT
-            More flags to pass to the `getaddrinfo()' function. These flags
-            will be combined with `AI_ADDRCONFIG', and if the `Listen'
-            argument is given, `AI_PASSIVE'. For more information see the
-            documentation about `getaddrinfo()' in the Socket module.
+            More flags to pass to the `getaddrinfo()' function. If not
+            supplied, a default of `AI_ADDRCONFIG' will be used.
+
+            These flags will be combined with `AI_PASSIVE' if the `Listen'
+            argument is given. For more information see the documentation
+            about `getaddrinfo()' in the Socket module.
 
     Listen => INT
             If defined, puts the socket into listening mode where new

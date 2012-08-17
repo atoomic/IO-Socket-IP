@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 use Carp;
 
@@ -235,10 +235,12 @@ either in string name or numeric form.
 
 =item GetAddrInfoFlags => INT
 
-More flags to pass to the C<getaddrinfo()> function. These flags will be
-combined with C<AI_ADDRCONFIG>, and if the C<Listen> argument is given,
-C<AI_PASSIVE>. For more information see the documentation about
-C<getaddrinfo()> in the L<Socket> module.
+More flags to pass to the C<getaddrinfo()> function. If not supplied, a
+default of C<AI_ADDRCONFIG> will be used.
+
+These flags will be combined with C<AI_PASSIVE> if the C<Listen> argument is
+given. For more information see the documentation about C<getaddrinfo()> in
+the L<Socket> module.
 
 =item Listen => INT
 
@@ -371,7 +373,12 @@ sub _configure
    my @localinfos;
    my @peerinfos;
 
-   $hints{flags} = ( $arg->{GetAddrInfoFlags} || 0 ) | $AI_ADDRCONFIG;
+   if( defined $arg->{GetAddrInfoFlags} ) {
+      $hints{flags} = $arg->{GetAddrInfoFlags};
+   }
+   else {
+      $hints{flags} = $AI_ADDRCONFIG;
+   }
 
    if( defined( my $family = $arg->{Family} ) ) {
       $hints{family} = $family;

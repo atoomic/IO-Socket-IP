@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 11;
+use Test::More tests => 9;
 
 use IO::Socket::IP;
 
@@ -34,22 +34,18 @@ SKIP: {
 
    ok( !$socket->connected, '$socket not yet connected' );
 
-   my $selectcount = 0;
-
    while( !$socket->connect and ( $! == EINPROGRESS || $! == EWOULDBLOCK ) ) {
       my $wvec = '';
       vec( $wvec, fileno $socket, 1 ) = 1;
       my $evec = '';
       vec( $evec, fileno $socket, 1 ) = 1;
 
-      $selectcount++;
       my $ret = select( undef, $wvec, $evec, 60 );
       defined $ret or die "Cannot select() - $!";
       $ret or die "select() timed out";
    }
 
    ok( !$!, '->connect eventually succeeds' );
-   ok( $selectcount > 0, '->connect had to select() at least once' );
 
    ok( $socket->connected, '$socket now connected' );
 }
@@ -76,15 +72,12 @@ SKIP: {
 
    ok( !$socket->connected, '$socket not yet connected' );
 
-   my $selectcount = 0;
-
    while( !$socket->connect and ( $! == EINPROGRESS || $! == EWOULDBLOCK ) ) {
       my $wvec = '';
       vec( $wvec, fileno $socket, 1 ) = 1;
       my $evec = '';
       vec( $evec, fileno $socket, 1 ) = 1;
 
-      $selectcount++;
       my $ret = select( undef, $wvec, $evec, 60 );
       defined $ret or die "Cannot select() - $!";
       $ret or die "select() timed out";
@@ -94,6 +87,4 @@ SKIP: {
 
    ok( $dollarbang == ECONNREFUSED, '->connect eventually fails with ECONNREFUSED' ) or
       diag( "  dollarbang = $dollarbang" );
-
-   ok( $selectcount > 0, '->connect had to select() at least once' );
 }
