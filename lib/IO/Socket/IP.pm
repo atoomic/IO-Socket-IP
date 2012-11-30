@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.17';
+our $VERSION = '0.18';
 
 use Carp;
 
@@ -805,6 +805,21 @@ sub socket
    CORE::socket( my $tmph, $_[0], $_[1], $_[2] ) or return undef;
 
    dup2( $tmph->fileno, $self->fileno ) or die "Unable to dup2 $tmph onto $self - $!";
+}
+
+# Versions of IO::Socket before 1.35 may leave socktype undef if from, say, an
+#   ->fdopen call. In this case we'll apply a fix
+BEGIN {
+   if( $IO::Socket::VERSION < 1.35 ) {
+      *socktype = sub {
+         my $self = shift;
+         my $type = $self->SUPER::socktype;
+         if( !defined $type ) {
+            $type = $self->sockopt( Socket::SO_TYPE() );
+         }
+         return $type;
+      };
+   }
 }
 
 =head1 NON-BLOCKING

@@ -1,5 +1,12 @@
 Revision history for IO-Socket-IP
 
+0.18    CHANGES:
+         * Work around ->socktype being undef on IO::Socket versions before
+           1.35 by fetching ->sockopt( SO_TYPE ) (RT81549)
+
+        BUGFIXES:
+         * Fix test skip counts in t/21nonblocking-connect-internet.t (RT79393)
+
 0.17    CHANGES:
          * Only pass AI_ADDRCONFIG as getaddrinfo() flag if no other flags
            specified, so the caller can disable it if required.
