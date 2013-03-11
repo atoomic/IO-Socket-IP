@@ -1,7 +1,7 @@
 #  You may distribute under the terms of either the GNU General Public License
 #  or the Artistic License (the same terms as Perl itself)
 #
-#  (C) Paul Evans, 2010-2012 -- leonerd@leonerd.org.uk
+#  (C) Paul Evans, 2010-2013 -- leonerd@leonerd.org.uk
 
 package IO::Socket::IP;
 
@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.18';
+our $VERSION = '0.19';
 
 use Carp;
 
@@ -512,6 +512,15 @@ sub _configure
       }
    }
 
+   if( !@infos and defined $hints{family} ) {
+      # If there was a Family hint then create a plain unbound, unconnected socket
+      @infos = ( {
+         family   => $hints{family},
+         socktype => $hints{socktype},
+         protocol => $hints{protocol},
+      } );
+   }
+
    # In the nonblocking case, caller will be calling ->setup multiple times.
    # Store configuration in the object for the ->setup method
    # Yes, these are messy. Sorry, I can't help that...
@@ -633,7 +642,7 @@ sub connected
    my $self = shift;
    return defined $self->fileno &&
           !${*$self}{io_socket_ip_connect_in_progress} &&
-          defined $self->peername;
+          defined getpeername( $self ); # ->peername caches, we need to detect disconnection
 }
 
 =head1 METHODS

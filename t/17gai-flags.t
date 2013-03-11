@@ -1,7 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
-use Test::More tests => 2;
+use warnings;
+
+use Test::More;
 
 use IO::Socket::IP;
 use Socket 1.95 qw(
@@ -59,3 +61,5 @@ SKIP: {
               ],
               '@gai_args for LocalPort => "80", GetAddrInfoFlags => AI_NUMERICSERV' );
 }
+
+done_testing;

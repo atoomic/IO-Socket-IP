@@ -1,7 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
-use Test::More tests => 9;
+use warnings;
+
+use Test::More;
 
 use IO::Socket::IP;
 
@@ -48,3 +50,5 @@ is( $socket->peerhost, "127.0.0.1",           '$socket->peerhost' );
 is( $socket->peerport, $testserver->sockport, '$socket->peerport' );
 
 ok( !$socket->blocking, '$socket->blocking' );
+
+done_testing;

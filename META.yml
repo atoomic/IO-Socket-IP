@@ -3,7 +3,7 @@ abstract: 'A drop-in replacement for C<IO::Socket::INET> supporting'
 author:
   - 'Paul Evans <leonerd@leonerd.org.uk>'
 build_requires:
-  Test::More: 0
+  Test::More: 0.88
 dynamic_config: 1
 generated_by: 'Module::Build version 0.4001, CPAN::Meta::Converter version 2.120921'
 license: perl
@@ -14,10 +14,10 @@ name: IO-Socket-IP
 provides:
   IO::Socket::IP:
     file: lib/IO/Socket/IP.pm
-    version: 0.18
+    version: 0.19
 requires:
   IO::Socket: 0
   Socket: 1.97
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.18
+version: 0.19

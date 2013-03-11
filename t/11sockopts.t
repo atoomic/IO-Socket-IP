@@ -1,7 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
-use Test::More tests => 3;
+use warnings;
+
+use Test::More;
 
 use IO::Socket::IP;
 
@@ -46,3 +48,5 @@ SKIP: {
 
    ok( $sock->getsockopt( SOL_SOCKET, SO_BROADCAST ), 'SO_BROADCAST set' );
 }
+
+done_testing;

@@ -1,7 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
-use Test::More tests => 1;
+use warnings;
+
+use Test::More;
 
 use IO::Socket::IP;
 use Socket 1.95 qw(
@@ -40,3 +42,5 @@ is_deeply( \@gai_args,
               [ undef, "80",         { flags => AI_PASSIVE|$AI_ADDRCONFIG, socktype => SOCK_STREAM, protocol => IPPROTO_TCP } ],
            ],
            '@gai_args for LocalPort => "zyxxyblarg(80)"' );
+
+done_testing;

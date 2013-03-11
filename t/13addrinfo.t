@@ -1,7 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
-use Test::More tests => 4;
+use warnings;
+
+use Test::More;
 
 use IO::Socket::IP;
 
@@ -51,3 +53,5 @@ use Socket qw( SOCK_STREAM unpack_sockaddr_in getaddrinfo );
               [ unpack_sockaddr_in $testclient->peername ],
               '$socket->sockname' );
 }
+
+done_testing;

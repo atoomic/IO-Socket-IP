@@ -1,7 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
-use Test::More tests => 20;
+use warnings;
+
+use Test::More;
 
 use IO::Socket::IP;
 
@@ -34,6 +36,8 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
 
    ok( defined $testclient, "accepted test $socktype client" );
 
+   ok( $socket->connected, "\$socket is connected for $socktype" );
+
    is_deeply( [ unpack_sockaddr_in $socket->sockname ],
               [ unpack_sockaddr_in $testclient->peername ],
               "\$socket->sockname for $socktype" );
@@ -51,4 +55,9 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
 
    # Can't easily test the non-numeric versions without relying on the system's
    # ability to resolve the name "localhost"
+
+   $socket->close;
+   ok( !$socket->connected, "\$socket not connected after close for $socktype" );
 }
+
+done_testing;

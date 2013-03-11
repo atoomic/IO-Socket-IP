@@ -1,6 +1,8 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use Test::More;
 
 use IO::Socket::IP;
@@ -11,8 +13,6 @@ my $AF_INET6 = eval { require Socket and Socket::AF_INET6() } or
 
 eval { IO::Socket::IP->new( LocalHost => "::1" ) } or
    plan skip_all => "Unable to bind to ::1";
-
-plan tests => 30;
 
 # Unpack just ip6_addr and port because other fields might not match end to end
 sub unpack_sockaddr_in6_addrport { 
@@ -69,3 +69,5 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    is( unpack("H*", $testclient->sockaddr), "0000"x7 . "0001", "\$testclient->sockaddr for $socktype" );
    is( unpack("H*", $testclient->peeraddr), "0000"x7 . "0001", "\$testclient->peeraddr for $socktype" );
 }
+
+done_testing;

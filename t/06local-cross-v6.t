@@ -1,14 +1,14 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use Test::More;
 
 use IO::Socket::IP;
 
 eval { IO::Socket::IP->new( LocalHost => "::1" ) } or
    plan skip_all => "Unable to bind to ::1";
-
-plan tests => 12;
 
 foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    my $testserver = IO::Socket::IP->new(
@@ -43,3 +43,5 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
       is( $socket->getline, "Response\n", "\$testclient to \$socket for $socktype" );
    }
 }
+
+done_testing;

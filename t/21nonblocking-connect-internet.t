@@ -1,7 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
-use Test::More tests => 9;
+use warnings;
+
+use Test::More;
 
 use IO::Socket::IP;
 
@@ -88,3 +90,5 @@ SKIP: {
    ok( $dollarbang == ECONNREFUSED, '->connect eventually fails with ECONNREFUSED' ) or
       diag( "  dollarbang = $dollarbang" );
 }
+
+done_testing;

@@ -1,5 +1,11 @@
 Revision history for IO-Socket-IP
 
+0.19    CHANGES:
+         * More IO::Socket::INET compatibility fixes:
+            + Ensure ->connected is false after ->close
+            + Ensure that IO::Socket::IP->new(Family => $family) still creates
+              an unbound, unconnected socket filehandle
+
 0.18    CHANGES:
          * Work around ->socktype being undef on IO::Socket versions before
            1.35 by fetching ->sockopt( SO_TYPE ) (RT81549)

@@ -1,7 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
-use Test::More tests => 2;
+use warnings;
+
+use Test::More;
 
 use IO::Socket::IP;
 use Socket qw( SOCK_STREAM );
@@ -17,3 +19,5 @@ $s2->fdopen( $s1->fileno, 'r' ) or die "Cannot fdopen - $!";
 
 ok( defined $s2->socktype, '$s2->socktype defined' );
 is( $s2->sockport, $s1->sockport, '$s2->sockport' );
+
+done_testing;

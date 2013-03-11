@@ -7,7 +7,7 @@ WriteMakefile
   'PREREQ_PM' => {
                    'IO::Socket' => 0,
                    'Socket' => '1.97',
-                   'Test::More' => 0
+                   'Test::More' => '0.88'
                  },
   'INSTALLDIRS' => 'site',
   'EXE_FILES' => [],

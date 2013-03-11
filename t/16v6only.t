@@ -1,6 +1,8 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use Test::More;
 
 use Socket qw(PF_INET6 PF_INET IPPROTO_IPV6 IPV6_V6ONLY);
@@ -8,8 +10,6 @@ use IO::Socket::IP;
 
 eval { IO::Socket::IP->new( LocalHost => "::1" ) } or
    plan skip_all => "Unable to bind to ::1";
-
-plan tests => 6;
 
 # Don't be locale-sensitive
 $! = Errno::ECONNREFUSED;
@@ -65,3 +65,5 @@ SKIP: {
       diag( "IO::Socket::IP->new failed - $err" );
    is( $testsock->peerport, $listensock->sockport, 'Test socket connected to correct peer port' );
 }
+
+done_testing;

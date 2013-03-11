@@ -1,7 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
-use Test::More tests => 2;
+use warnings;
+
+use Test::More;
 
 use IO::Socket::IP;
 use Socket qw( AF_INET SOCK_STREAM );
@@ -22,3 +24,5 @@ close $tmph;
 $socket->socket( AF_INET, SOCK_STREAM, 0 ) or die "Cannot socket() - $!";
 
 is( $socket->fileno, $fileno, '$socket->fileno preserved after ->socket with free handle' );
+
+done_testing;

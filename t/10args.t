@@ -1,6 +1,8 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use Test::More;
 
 use IO::Socket::IP;
@@ -47,8 +49,6 @@ my @tests = (
    [ [ LocalHost => undef       ], { LocalHost => undef                                   } ],
 );
 
-plan tests => 4 + scalar(@tests);
-
 is_deeply( [ IO::Socket::IP->split_addr( "hostname:http" ) ],
            [ "hostname",  "http" ],
            "split_addr hostname:http" );
@@ -66,3 +66,5 @@ is_deeply( [ IO::Socket::IP->split_addr( "something.else" ) ],
            "split_addr something.else" );
 
 arguments_is(@$_) for @tests;
+
+done_testing;

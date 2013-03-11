@@ -1,7 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
-use Test::More tests => 12;
+use warnings;
+
+use Test::More;
 
 use IO::Socket::IP;
 
@@ -34,3 +36,5 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    $testclient->write( "Response\n" );
    is( $socket->getline, "Response\n", "\$testclient to \$socket for $socktype" );
 }
+
+done_testing;

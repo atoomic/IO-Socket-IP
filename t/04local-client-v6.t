@@ -1,6 +1,8 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use Test::More;
 
 use IO::Socket::IP;
@@ -11,8 +13,6 @@ my $AF_INET6 = eval { require Socket and Socket::AF_INET6() } or
 
 eval { IO::Socket::IP->new( LocalHost => "::1" ) } or
    plan skip_all => "Unable to bind to ::1";
-
-plan tests => 20;
 
 # Unpack just ip6_addr and port because other fields might not match end to end
 sub unpack_sockaddr_in6_addrport { 
@@ -49,6 +49,8 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
 
    ok( defined $testclient, "accepted test $socktype client" );
 
+   ok( $socket->connected, "\$socket is connected for $socktype" );
+
    is_deeply( [ unpack_sockaddr_in6_addrport( $socket->sockname ) ],
               [ unpack_sockaddr_in6_addrport( $testclient->peername ) ],
               "\$socket->sockname for $socktype" );
@@ -66,4 +68,9 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
 
    # Can't easily test the non-numeric versions without relying on the system's
    # ability to resolve the name "localhost"
+
+   $socket->close;
+   ok( !$socket->connected, "\$socket not connected after close for $socktype" );
 }
+
+done_testing;

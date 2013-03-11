@@ -1,7 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
-use Test::More tests => 2;
+use warnings;
+
+use Test::More;
 
 use IO::Socket;
 use IO::Socket::IP -register;
@@ -32,3 +34,5 @@ SKIP: {
    isa_ok( $sock, "IO::Socket::IP", 'IO::Socket->new( Domain => AF_INET6 )' ) or
       diag( "  error was $@" );
 }
+
+done_testing;

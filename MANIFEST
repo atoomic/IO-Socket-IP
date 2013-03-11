@@ -25,6 +25,7 @@ t/15io-socket.t
 t/16v6only.t
 t/17gai-flags.t
 t/18fdopen.t
+t/19no-addrs.t
 t/20nonblocking-connect.t
 t/21nonblocking-connect-internet.t
 t/99pod.t
