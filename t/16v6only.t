@@ -11,6 +11,9 @@ use IO::Socket::IP;
 eval { IO::Socket::IP->new( LocalHost => "::1" ) } or
    plan skip_all => "Unable to bind to ::1";
 
+eval { defined IPV6_V6ONLY } or
+   plan skip_all => "IPV6_V6ONLY not available";
+
 # Don't be locale-sensitive
 $! = Errno::ECONNREFUSED;
 my $ECONNREFUSED_STR = "$!";

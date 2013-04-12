@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.19';
+our $VERSION = '0.19_001';
 
 use Carp;
 
@@ -795,7 +795,7 @@ sub peeraddr { my $self = shift; _unpack_sockaddr $self->peername }
 sub accept
 {
    my $self = shift;
-   my ( $new, $peer ) = $self->SUPER::accept or return;
+   my ( $new, $peer ) = $self->SUPER::accept( @_ ) or return;
 
    ${*$new}{$_} = ${*$self}{$_} for qw( io_socket_domain io_socket_type io_socket_proto );
 
@@ -962,6 +962,31 @@ sub split_addr
    }
 
    return ( $addr, undef );
+}
+
+=head2 $addr = IO::Socket::IP->join_addr( $host, $port )
+
+Utility method that performs the reverse of C<split_addr>, returning a string
+formed by joining the specified host address and port number. The host address
+will be wrapped in C<[]> brackets if required (because it is a raw IPv6
+numeric address).
+
+This can be especially useful when combined with the C<sockhost_service> or
+C<peerhost_service> methods.
+
+ say "Connected to ", IO::Socket::IP->join_addr( $sock->peerhost_service );
+
+=cut
+
+sub join_addr
+{
+   shift;
+   my ( $host, $port ) = @_;
+
+   $host = "[$host]" if $host =~ m/:/;
+
+   return join ":", $host, $port if defined $port;
+   return $host;
 }
 
 =head1 C<IO::Socket::INET> INCOMPATIBILITES

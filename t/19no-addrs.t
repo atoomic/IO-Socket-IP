@@ -23,6 +23,9 @@ SKIP: {
    my $AF_INET6 = eval { require Socket and Socket::AF_INET6() } or
       skip "No AF_INET6", 3;
 
+   eval { IO::Socket::IP->new( LocalHost => "::1" ) } or
+      skip "Unable to bind to ::1", 3;
+
    my $sock = IO::Socket::IP->new( Family => $AF_INET6 );
 
    ok( defined $sock->fileno, '$sock->fileno for Family => AF_INET6' );

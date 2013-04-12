@@ -369,6 +369,17 @@ NON-BLOCKING
      IO::Socket::IP->split_addr( "something.else" )
                                   # ( "something.else", undef )
 
+  $addr = IO::Socket::IP->join_addr( $host, $port )
+    Utility method that performs the reverse of `split_addr', returning a
+    string formed by joining the specified host address and port number. The
+    host address will be wrapped in `[]' brackets if required (because it is
+    a raw IPv6 numeric address).
+
+    This can be especially useful when combined with the `sockhost_service'
+    or `peerhost_service' methods.
+
+     say "Connected to ", IO::Socket::IP->join_addr( $sock->peerhost_service );
+
 `IO::Socket::INET' INCOMPATIBILITES
     *   The `Timeout' constructor argument is currently not recognised.
 

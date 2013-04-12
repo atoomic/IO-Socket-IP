@@ -1,5 +1,11 @@
 Revision history for IO-Socket-IP
 
+0.19_001 CHANGES:
+         * Skip the IPV6_V6ONLY tests on machines lacking that constant
+         * Avoid Socket::inet_pton() in unit tests as Strawberry lacks it
+         * Added ->join_addr
+         * Respect subclassing argument to ->accept
+
 0.19    CHANGES:
          * More IO::Socket::INET compatibility fixes:
             + Ensure ->connected is false after ->close

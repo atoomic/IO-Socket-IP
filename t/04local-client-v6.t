@@ -23,8 +23,12 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    my $testserver = IO::Socket->new;
    $testserver->socket( $AF_INET6, Socket->$socktype, 0 )
       or die "Cannot socket() - $!";
-   $testserver->bind( Socket::pack_sockaddr_in6( 0, Socket::inet_pton( $AF_INET6, "::1" ) ) ) or
-      die "Cannot bind() - $!";
+
+   my ( $err, $ai ) = Socket::getaddrinfo( "::1", 0, { family => $AF_INET6 } );
+   die "getaddrinfo() - $err" if $err;
+
+   $testserver->bind( $ai->{addr} ) or die "Cannot bind() - $!";
+
    if( $socktype eq "SOCK_STREAM" ) {
       $testserver->listen( 1 ) or die "Cannot listen() - $!";
    }

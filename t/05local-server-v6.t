@@ -38,8 +38,11 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    my $socket = IO::Socket->new;
    $socket->socket( $AF_INET6, Socket->$socktype, 0 )
       or die "Cannot socket() - $!";
-   $socket->connect( Socket::pack_sockaddr_in6( $testserver->sockport, Socket::inet_pton( $AF_INET6, "::1" ) ) )
-      or die "Cannot connect() - $!";
+
+   my ( $err, $ai ) = Socket::getaddrinfo( "::1", $testserver->sockport, { family => $AF_INET6 } );
+   die "getaddrinfo() - $err" if $err;
+
+   $socket->connect( $ai->{addr} ) or die "Cannot connect() - $!";
 
    my $testclient = ( $socktype eq "SOCK_STREAM" ) ? 
       $testserver->accept : 

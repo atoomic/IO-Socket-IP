@@ -65,6 +65,22 @@ is_deeply( [ IO::Socket::IP->split_addr( "something.else" ) ],
            [ "something.else", undef ],
            "split_addr something.else" );
 
+is( IO::Socket::IP->join_addr( "hostname", "http" ),
+    "hostname:http",
+    'join_addr hostname:http' );
+
+is( IO::Socket::IP->join_addr( "192.0.2.1", 80 ),
+    "192.0.2.1:80",
+    'join_addr 192.0.2.1:80' );
+
+is( IO::Socket::IP->join_addr( "2001:db8::1", 80 ),
+    "[2001:db8::1]:80",
+    'join_addr [2001:db8::1]:80' );
+
+is( IO::Socket::IP->join_addr( "something.else", undef ),
+    "something.else",
+    'join_addr something.else' );
+
 arguments_is(@$_) for @tests;
 
 done_testing;
