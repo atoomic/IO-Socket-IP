@@ -1,5 +1,11 @@
 Revision history for IO-Socket-IP
 
+0.20_001 CHANGES:
+         * Provide a downgrade method to turn an AF_INET-domain socket into a
+           real IO::Socket::INET instance
+         * Ensure that IO::Socket->new( Domain => ... ) definitely returns a
+           socket in the right family
+
 0.20    CHANGES:
          * Skip the IPV6_V6ONLY tests on machines lacking that constant
          * Avoid Socket::inet_pton() in unit tests as Strawberry lacks it

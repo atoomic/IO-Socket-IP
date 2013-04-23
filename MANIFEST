@@ -27,6 +27,7 @@ t/17gai-flags.t
 t/18fdopen.t
 t/19no-addrs.t
 t/20subclass.t
+t/21as-inet.t
 t/30nonblocking-connect.t
 t/31nonblocking-connect-internet.t
 t/99pod.t
