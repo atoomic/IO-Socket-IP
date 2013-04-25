@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.20_001';
+our $VERSION = '0.21';
 
 use Carp;
 
