@@ -1,5 +1,9 @@
 Revision history for IO-Socket-IP
 
+0.21_001 BUGFIXES:
+         * Always pass 'socktype' hint to getaddrinfo() in unit tests because
+           some OSes get upset without it
+
 0.21    CHANGES:
          * Provide a downgrade method to turn an AF_INET-domain socket into a
            real IO::Socket::INET instance

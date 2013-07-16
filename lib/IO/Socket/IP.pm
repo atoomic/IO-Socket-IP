@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.21';
+our $VERSION = '0.21_001';
 
 use Carp;
 
@@ -398,7 +398,7 @@ sub _configure
       $hints{protocol} = $proto;
    }
 
-   # To maintain compatibilty with IO::Socket::INET, imply a default of
+   # To maintain compatibility with IO::Socket::INET, imply a default of
    # SOCK_STREAM + IPPROTO_TCP if neither hint is given
    if( !defined $hints{socktype} and !defined $hints{protocol} ) {
       $hints{socktype} = SOCK_STREAM;

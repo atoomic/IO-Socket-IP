@@ -24,7 +24,7 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    $testserver->socket( $AF_INET6, Socket->$socktype, 0 )
       or die "Cannot socket() - $!";
 
-   my ( $err, $ai ) = Socket::getaddrinfo( "::1", 0, { family => $AF_INET6 } );
+   my ( $err, $ai ) = Socket::getaddrinfo( "::1", 0, { family => $AF_INET6, socktype => Socket->$socktype } );
    die "getaddrinfo() - $err" if $err;
 
    $testserver->bind( $ai->{addr} ) or die "Cannot bind() - $!";
