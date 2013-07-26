@@ -67,8 +67,11 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    is( $socket->peerport, $testport, "\$socket->peerport for $socktype" );
 
    # Unpack just so it pretty prints without wrecking the terminal if it fails
-   is( unpack("H*", $socket->sockaddr), "0000"x7 . "0001", "\$socket->sockaddr for $socktype" );
    is( unpack("H*", $socket->peeraddr), "0000"x7 . "0001", "\$socket->peeraddr for $socktype" );
+   if( $socktype eq "SOCK_STREAM" ) {
+      # Some OSes don't update sockaddr with a local bind() on SOCK_DGRAM sockets
+      is( unpack("H*", $socket->sockaddr), "0000"x7 . "0001", "\$socket->sockaddr for $socktype" );
+   }
 
    # Can't easily test the non-numeric versions without relying on the system's
    # ability to resolve the name "localhost"

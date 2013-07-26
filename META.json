@@ -29,14 +29,14 @@
    "provides" : {
       "IO::Socket::IP" : {
          "file" : "lib/IO/Socket/IP.pm",
-         "version" : "0.21_001"
+         "version" : "0.22"
       }
    },
-   "release_status" : "testing",
+   "release_status" : "stable",
    "resources" : {
       "license" : [
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "0.21_001"
+   "version" : "0.22"
 }

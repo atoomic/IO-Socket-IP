@@ -1,8 +1,10 @@
 Revision history for IO-Socket-IP
 
-0.21_001 BUGFIXES:
+0.22    BUGFIXES:
          * Always pass 'socktype' hint to getaddrinfo() in unit tests because
            some OSes get upset without it
+         * Don't unit-test that sockaddr is updated with a local bind() on
+           SOCK_DGRAM sockets because some OSes don't
 
 0.21    CHANGES:
          * Provide a downgrade method to turn an AF_INET-domain socket into a
