@@ -27,7 +27,11 @@ TODO: {
 
 SKIP: {
    # Some OSes don't implement SO_REUSEPORT
-   skip "No SO_REUSEPORT", 1 unless defined eval { SO_REUSEPORT };
+   skip "No SO_REUSEPORT constant", 1 unless defined eval { SO_REUSEPORT };
+   skip "No support for SO_REUSEPORT", 1 unless defined eval {
+      my $s;
+      socket( $s, Socket::PF_INET, Socket::SOCK_STREAM, 0 ) and
+         setsockopt( $s, SOL_SOCKET, SO_REUSEPORT, 1 ) };
 
    my $sock = IO::Socket::IP->new(
       LocalHost => "127.0.0.1",

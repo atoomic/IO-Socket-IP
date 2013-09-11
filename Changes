@@ -1,5 +1,10 @@
 Revision history for IO-Socket-IP
 
+0.23    2013/09/11 17:53:19
+        [BUGFIXES]
+         * Check that kernel actually supports SO_REUSEPORT before
+           unit-testing it (RT86177)
+
 0.22    BUGFIXES:
          * Always pass 'socktype' hint to getaddrinfo() in unit tests because
            some OSes get upset without it
