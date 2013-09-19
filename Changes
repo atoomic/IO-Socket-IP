@@ -1,5 +1,10 @@
 Revision history for IO-Socket-IP
 
+0.24    2013/09/19 14:17:22
+        [BUGFIXES]
+         * Defend against INADDR_LOOPBACK not being 127.0.0.1 on machines with
+           odd networking (e.g. FreeBSD jails) during unit testing
+
 0.23    2013/09/11 17:53:19
         [BUGFIXES]
          * Check that kernel actually supports SO_REUSEPORT before

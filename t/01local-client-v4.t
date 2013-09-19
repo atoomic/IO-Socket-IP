@@ -8,7 +8,19 @@ use Test::More;
 use IO::Socket::IP;
 
 use IO::Socket::INET;
-use Socket qw( unpack_sockaddr_in );
+use Socket qw( inet_ntoa unpack_sockaddr_in );
+
+# Some odd locations like BSD jails might not like INADDR_LOOPBACK. We'll
+# establish a baseline first to test against
+my $INADDR_LOOPBACK = do {
+   my $localsock = IO::Socket::INET->new( LocalAddr => "localhost", Listen => 1 );
+   $localsock->sockaddr;
+};
+my $INADDR_LOOPBACK_HOST = inet_ntoa( $INADDR_LOOPBACK );
+if( $INADDR_LOOPBACK ne INADDR_LOOPBACK ) {
+   diag( "Testing with INADDR_LOOPBACK=$INADDR_LOOPBACK_HOST; this may be because of odd networking" );
+}
+my $INADDR_LOOPBACK_HEX = unpack "H*", $INADDR_LOOPBACK;
 
 foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    my $testserver = IO::Socket::INET->new(
@@ -46,12 +58,12 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
               [ unpack_sockaddr_in $testclient->sockname ],
               "\$socket->peername for $socktype" );
 
-   is( $socket->peerhost, "127.0.0.1",           "\$socket->peerhost for $socktype" );
+   is( $socket->peerhost, $INADDR_LOOPBACK_HOST, "\$socket->peerhost for $socktype" );
    is( $socket->peerport, $testserver->sockport, "\$socket->peerport for $socktype" );
 
    # Unpack just so it pretty prints without wrecking the terminal if it fails
-   is( unpack("H*", $socket->sockaddr), "7f000001", "\$socket->sockaddr for $socktype" );
-   is( unpack("H*", $socket->peeraddr), "7f000001", "\$socket->peeraddr for $socktype" );
+   is( unpack("H*", $socket->sockaddr), $INADDR_LOOPBACK_HEX, "\$socket->sockaddr for $socktype" );
+   is( unpack("H*", $socket->peeraddr), $INADDR_LOOPBACK_HEX, "\$socket->peeraddr for $socktype" );
 
    # Can't easily test the non-numeric versions without relying on the system's
    # ability to resolve the name "localhost"

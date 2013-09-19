@@ -8,7 +8,19 @@ use Test::More;
 use IO::Socket::IP;
 
 use IO::Socket::INET;
-use Socket qw( unpack_sockaddr_in );
+use Socket qw( inet_ntoa unpack_sockaddr_in );
+
+# Some odd locations like BSD jails might not like INADDR_LOOPBACK. We'll
+# establish a baseline first to test against
+my $INADDR_LOOPBACK = do {
+   my $localsock = IO::Socket::INET->new( LocalAddr => "localhost", Listen => 1 );
+   $localsock->sockaddr;
+};
+my $INADDR_LOOPBACK_HOST = inet_ntoa( $INADDR_LOOPBACK );
+if( $INADDR_LOOPBACK ne INADDR_LOOPBACK ) {
+   diag( "Testing with INADDR_LOOPBACK=$INADDR_LOOPBACK_HOST; this may be because of odd networking" );
+}
+my $INADDR_LOOPBACK_HEX = unpack "H*", $INADDR_LOOPBACK;
 
 foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    my $testserver = IO::Socket::IP->new(
@@ -23,7 +35,7 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    is( $testserver->sockdomain, AF_INET,           "\$testserver->sockdomain for $socktype" );
    is( $testserver->socktype,   Socket->$socktype, "\$testserver->socktype for $socktype" );
 
-   is( $testserver->sockhost, "127.0.0.1", "\$testserver->sockhost for $socktype" );
+   is( $testserver->sockhost, $INADDR_LOOPBACK_HOST, "\$testserver->sockhost for $socktype" );
    like( $testserver->sockport, qr/^\d+$/, "\$testserver->sockport for $socktype" );
 
    my $socket = IO::Socket::INET->new(
@@ -55,8 +67,8 @@ foreach my $socktype (qw( SOCK_STREAM SOCK_DGRAM )) {
    is( $testclient->peerport, $socket->sockport, "\$testclient->peerport for $socktype" );
 
    # Unpack just so it pretty prints without wrecking the terminal if it fails
-   is( unpack("H*", $testclient->sockaddr), "7f000001", "\$testclient->sockaddr for $socktype" );
-   is( unpack("H*", $testclient->peeraddr), "7f000001", "\$testclient->peeraddr for $socktype" );
+   is( unpack("H*", $testclient->sockaddr), $INADDR_LOOPBACK_HEX, "\$testclient->sockaddr for $socktype" );
+   is( unpack("H*", $testclient->peeraddr), $INADDR_LOOPBACK_HEX, "\$testclient->peeraddr for $socktype" );
 }
 
 done_testing;

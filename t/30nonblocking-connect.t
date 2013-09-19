@@ -10,6 +10,17 @@ use IO::Socket::IP;
 use IO::Socket::INET;
 use Errno qw( EINPROGRESS EWOULDBLOCK );
 
+# Some odd locations like BSD jails might not like INADDR_LOOPBACK. We'll
+# establish a baseline first to test against
+my $INADDR_LOOPBACK = do {
+   my $localsock = IO::Socket::INET->new( LocalAddr => "localhost", Listen => 1 );
+   $localsock->sockaddr;
+};
+my $INADDR_LOOPBACK_HOST = inet_ntoa( $INADDR_LOOPBACK );
+if( $INADDR_LOOPBACK ne INADDR_LOOPBACK ) {
+   diag( "Testing with INADDR_LOOPBACK=$INADDR_LOOPBACK_HOST; this may be because of odd networking" );
+}
+
 my $testserver = IO::Socket::INET->new(
    Listen    => 1,
    LocalHost => "127.0.0.1",
@@ -46,7 +57,7 @@ is_deeply( [ unpack_sockaddr_in $socket->peername ],
            [ unpack_sockaddr_in $testserver->sockname ],
            '$socket->peername' );
 
-is( $socket->peerhost, "127.0.0.1",           '$socket->peerhost' );
+is( $socket->peerhost, $INADDR_LOOPBACK_HOST, '$socket->peerhost' );
 is( $socket->peerport, $testserver->sockport, '$socket->peerport' );
 
 ok( !$socket->blocking, '$socket->blocking' );
