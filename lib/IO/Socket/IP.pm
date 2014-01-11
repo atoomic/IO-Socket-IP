@@ -1,7 +1,7 @@
 #  You may distribute under the terms of either the GNU General Public License
 #  or the Artistic License (the same terms as Perl itself)
 #
-#  (C) Paul Evans, 2010-2013 -- leonerd@leonerd.org.uk
+#  (C) Paul Evans, 2010-2014 -- leonerd@leonerd.org.uk
 
 package IO::Socket::IP;
 
@@ -9,7 +9,7 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-our $VERSION = '0.24';
+our $VERSION = '0.25';
 
 use Carp;
 
@@ -58,8 +58,7 @@ my $IPv6_re = do {
 
 =head1 NAME
 
-C<IO::Socket::IP> - A drop-in replacement for C<IO::Socket::INET> supporting
-both IPv4 and IPv6
+C<IO::Socket::IP> - Family-neutral IP socket supporting both IPv4 and IPv6
 
 =head1 SYNOPSIS
 
@@ -80,7 +79,7 @@ both IPv4 and IPv6
 =head1 DESCRIPTION
 
 This module provides a protocol-independent way to use IPv4 and IPv6 sockets,
-as a drop-in replacement for L<IO::Socket::INET>. Most constructor arguments
+intended as a replacement for L<IO::Socket::INET>. Most constructor arguments
 and methods are provided in a backward-compatible way. For a list of known
 differences, see the C<IO::Socket::INET> INCOMPATIBILITES section below.
 
@@ -354,9 +353,9 @@ sub configure
       my $host    = $type . 'Host';
       my $service = $type . 'Service';
 
-      if (exists $arg->{$host} && !exists $arg->{$service}) {
-         defined $arg->{$host} or next;
+      if( defined $arg->{$host} ) {
          ( $arg->{$host}, my $s ) = $self->split_addr( $arg->{$host} );
+         # IO::Socket::INET compat - *Host parsed port always takes precedence
          $arg->{$service} = $s if defined $s;
       }
    }
@@ -512,8 +511,21 @@ sub _configure
       }
    }
 
-   if( !@infos and defined $hints{family} ) {
+   if( !@infos ) {
       # If there was a Family hint then create a plain unbound, unconnected socket
+      # If there wasn't, use getaddrinfo()'s AI_ADDRCONFIG side-effect to guess a
+      # suitable family first.
+      if( !defined $hints{family} ) {
+         my ( $err, $addrinfo ) = getaddrinfo( "", "0", \%hints );
+         if( $err ) {
+            $@ = "$err";
+            $! = EINVAL;
+            return;
+         }
+
+         $hints{family} = $addrinfo->{family};
+      }
+
       @infos = ( {
          family   => $hints{family},
          socktype => $hints{socktype},
@@ -928,8 +940,7 @@ To support the C<IO::Socket::INET> API, the host and port information may be
 passed in a single string rather than as two separate arguments.
 
 If either C<LocalHost> or C<PeerHost> (or their C<...Addr> synonyms) have any
-of the following special forms, and C<LocalService> or C<PeerService> (or
-their C<...Port> synonyms) are absent, special parsing is applied.
+of the following special forms then special parsing is applied.
 
 The value of the C<...Host> argument will be split to give both the hostname
 and port (or service name):
@@ -949,6 +960,10 @@ service name and number, in a form such as
 
 In this case, the name (C<http>) will be tried first, but if the resolver does
 not understand it then the port number (C<80>) will be used instead.
+
+If the C<...Host> argument is in this special form and the corresponding
+C<...Service> or C<...Port> argument is also defined, the one parsed from
+the C<...Host> argument will take precedence and the other will be ignored.
 
 =head2 ( $host, $port ) = IO::Socket::IP->split_addr( $addr )
 

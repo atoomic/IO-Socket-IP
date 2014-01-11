@@ -1,6 +1,6 @@
 NAME
-    `IO::Socket::IP' - A drop-in replacement for `IO::Socket::INET'
-    supporting both IPv4 and IPv6
+    `IO::Socket::IP' - Family-neutral IP socket supporting both IPv4 and
+    IPv6
 
 SYNOPSIS
      use IO::Socket::IP;
@@ -19,10 +19,10 @@ SYNOPSIS
 
 DESCRIPTION
     This module provides a protocol-independent way to use IPv4 and IPv6
-    sockets, as a drop-in replacement for IO::Socket::INET. Most constructor
-    arguments and methods are provided in a backward-compatible way. For a
-    list of known differences, see the `IO::Socket::INET' INCOMPATIBILITES
-    section below.
+    sockets, intended as a replacement for IO::Socket::INET. Most
+    constructor arguments and methods are provided in a backward-compatible
+    way. For a list of known differences, see the `IO::Socket::INET'
+    INCOMPATIBILITES section below.
 
     It uses the `getaddrinfo(3)' function to convert hostnames and service
     names or port numbers into sets of possible addresses to connect to or
@@ -341,8 +341,7 @@ NON-BLOCKING
     be passed in a single string rather than as two separate arguments.
 
     If either `LocalHost' or `PeerHost' (or their `...Addr' synonyms) have
-    any of the following special forms, and `LocalService' or `PeerService'
-    (or their `...Port' synonyms) are absent, special parsing is applied.
+    any of the following special forms then special parsing is applied.
 
     The value of the `...Host' argument will be split to give both the
     hostname and port (or service name):
@@ -362,6 +361,11 @@ NON-BLOCKING
 
     In this case, the name (`http') will be tried first, but if the resolver
     does not understand it then the port number (`80') will be used instead.
+
+    If the `...Host' argument is in this special form and the corresponding
+    `...Service' or `...Port' argument is also defined, the one parsed from
+    the `...Host' argument will take precedence and the other will be
+    ignored.
 
   ( $host, $port ) = IO::Socket::IP->split_addr( $addr )
     Utility method that provides the parsing functionality described above.

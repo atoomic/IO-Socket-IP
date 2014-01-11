@@ -33,4 +33,13 @@ SKIP: {
    is( $sock->socktype, SOCK_STREAM, '$sock->socktype for Family => AF_INET6' );
 }
 
+# Lack of even a Family hint - _a_ socket is created but we don't guarantee
+# what family
+{
+   my $sock = IO::Socket::IP->new( Type => SOCK_STREAM );
+
+   ok( defined $sock->fileno, '$sock->fileno for Type => SOCK_STREAM' );
+   is( $sock->socktype, SOCK_STREAM, '$sock->socktype for Type => SOCK_STREAM' );
+}
+
 done_testing;

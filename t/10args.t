@@ -47,6 +47,12 @@ my @tests = (
    [ [ PeerHost  => '[::1]'     ], { PeerHost  => '::1'                                   } ],
    [ [ LocalHost => '[::1]:80'  ], { LocalHost => '::1',           LocalService => '80'   } ],
    [ [ LocalHost => undef       ], { LocalHost => undef                                   } ],
+
+   # IO::Socket::INET is happy to take port from the *Host argument even if a *Port argument
+   # exists
+   [ [ PeerHost => '127.0.0.1:80', PeerPort => '80' ], { PeerHost => '127.0.0.1', PeerService => '80' } ],
+   # *Host argument should take precedence over *Service if both exist
+   [ [ PeerHost => '127.0.0.1:443', PeerPort => '80' ], { PeerHost => '127.0.0.1', PeerService => '443' } ],
 );
 
 is_deeply( [ IO::Socket::IP->split_addr( "hostname:http" ) ],

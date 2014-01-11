@@ -1,5 +1,12 @@
 Revision history for IO-Socket-IP
 
+0.25    2014/01/11 17:19:29
+        [BUGFIXES]
+         * Allow both *Host with port and *Port arguments, letting port from
+           Host argument take precedence (INET compat)
+         * Ensure that a Host/Family-less constructor still constructs a
+           socket, by using gai()s AI_ADDRCONFIG hint
+
 0.24    2013/09/19 14:17:22
         [BUGFIXES]
          * Defend against INADDR_LOOPBACK not being 127.0.0.1 on machines with
