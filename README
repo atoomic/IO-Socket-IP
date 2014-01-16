@@ -30,7 +30,7 @@ DESCRIPTION
     while still falling back to IPv4-only on systems which don't.
 
 REPLACING `IO::Socket' DEFAULT BEHAVIOUR
-    By placing `-register' in the import list, `IO::Socket' uses
+    By placing `-register' in the import list, IO::Socket uses
     `IO::Socket::IP' rather than `IO::Socket::INET' as the class that
     handles `PF_INET'. `IO::Socket' will also use `IO::Socket::IP' rather
     than `IO::Socket::INET6' to handle `PF_INET6', provided that the
@@ -167,10 +167,6 @@ CONSTRUCTORS
             connections you will have to create two listening sockets, one
             bound to each protocol.
 
-    Timeout This `IO::Socket::INET'-style argument is not currently
-            supported. See the `IO::Socket::INET' INCOMPATIBILITES section
-            below.
-
     MultiHomed
             This `IO::Socket::INET'-style argument is ignored, except if it
             is defined but false. See the `IO::Socket::INET'
@@ -188,6 +184,12 @@ CONSTRUCTORS
     `SOCK_STREAM' and `IPPROTO_TCP' respectively will be set, to maintain
     compatibility with `IO::Socket::INET'. Other named arguments that are
     not recognised are ignored.
+
+    If neither `Family' nor any hosts or addresses are passed, nor any
+    `*AddrInfo', then the constructor has no information on which to decide
+    a socket family to create. In this case, it performs a `getaddinfo' call
+    with the `AI_ADDRCONFIG' flag, no host name, and a service name of
+    `"0"', and uses the family of the first returned result.
 
     If the constructor fails, it will set `$@' to an appropriate error
     message; this may be from `$!' or it may be some other string; not every
@@ -397,9 +399,7 @@ NON-BLOCKING
      say "Connected to ", IO::Socket::IP->join_addr( $sock->peerhost_service );
 
 `IO::Socket::INET' INCOMPATIBILITES
-    *   The `Timeout' constructor argument is currently not recognised.
-
-        The behaviour enabled by `MultiHomed' is in fact implemented by
+    *   The behaviour enabled by `MultiHomed' is in fact implemented by
         `IO::Socket::IP' as it is required to correctly support searching
         for a useable address from the results of the `getaddrinfo(3)' call.
         The constructor will ignore the value of this argument, except if it

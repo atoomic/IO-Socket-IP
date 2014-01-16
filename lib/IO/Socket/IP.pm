@@ -4,12 +4,15 @@
 #  (C) Paul Evans, 2010-2014 -- leonerd@leonerd.org.uk
 
 package IO::Socket::IP;
+# $VERSION needs to be set before  use base 'IO::Socket'
+#  - https://rt.cpan.org/Ticket/Display.html?id=92107
+BEGIN {
+   $VERSION = '0.26';
+}
 
 use strict;
 use warnings;
 use base qw( IO::Socket );
-
-our $VERSION = '0.25';
 
 use Carp;
 
@@ -22,7 +25,7 @@ use Socket 1.97 qw(
    IPPROTO_IPV6 IPV6_V6ONLY
    NI_DGRAM NI_NUMERICHOST NI_NUMERICSERV NIx_NOHOST NIx_NOSERV
    SO_REUSEADDR SO_REUSEPORT SO_BROADCAST SO_ERROR
-   SOCK_DGRAM SOCK_STREAM 
+   SOCK_DGRAM SOCK_STREAM
    SOL_SOCKET
 );
 my $AF_INET6 = eval { Socket::AF_INET6() }; # may not be defined
@@ -90,7 +93,7 @@ falling back to IPv4-only on systems which don't.
 
 =head1 REPLACING C<IO::Socket> DEFAULT BEHAVIOUR
 
-By placing C<-register> in the import list, C<IO::Socket> uses
+By placing C<-register> in the import list, L<IO::Socket> uses
 C<IO::Socket::IP> rather than C<IO::Socket::INET> as the class that handles
 C<PF_INET>.  C<IO::Socket> will also use C<IO::Socket::IP> rather than
 C<IO::Socket::INET6> to handle C<PF_INET6>, provided that the C<AF_INET6>
@@ -285,15 +288,10 @@ If your platform does not support disabling this option but you still want to
 listen for both C<AF_INET> and C<AF_INET6> connections you will have to create
 two listening sockets, one bound to each protocol.
 
-=item Timeout
-
-This C<IO::Socket::INET>-style argument is not currently supported. See the
-C<IO::Socket::INET> INCOMPATIBILITES section below.
-
 =item MultiHomed
 
 This C<IO::Socket::INET>-style argument is ignored, except if it is defined
-but false. See the C<IO::Socket::INET> INCOMPATIBILITES section below. 
+but false. See the C<IO::Socket::INET> INCOMPATIBILITES section below.
 
 However, the behaviour it enables is always performed by C<IO::Socket::IP>.
 
@@ -310,6 +308,12 @@ C<SOCK_STREAM> and C<IPPROTO_TCP> respectively will be set, to maintain
 compatibility with C<IO::Socket::INET>. Other named arguments that are not
 recognised are ignored.
 
+If neither C<Family> nor any hosts or addresses are passed, nor any
+C<*AddrInfo>, then the constructor has no information on which to decide a
+socket family to create. In this case, it performs a C<getaddinfo> call with
+the C<AI_ADDRCONFIG> flag, no host name, and a service name of C<"0">, and
+uses the family of the first returned result.
+
 If the constructor fails, it will set C<$@> to an appropriate error message;
 this may be from C<$!> or it may be some other string; not every failure
 necessarily has an associated C<errno> value.
@@ -323,7 +327,7 @@ behaviour given in the C<PeerHost> AND C<LocalHost> PARSING section below.
 
 =cut
 
-sub new 
+sub new
 {
    my $class = shift;
    my %arg = (@_ == 1) ? (PeerHost => $_[0]) : @_;
@@ -1062,8 +1066,6 @@ sub configure
 =over 4
 
 =item *
-
-The C<Timeout> constructor argument is currently not recognised.
 
 The behaviour enabled by C<MultiHomed> is in fact implemented by
 C<IO::Socket::IP> as it is required to correctly support searching for a

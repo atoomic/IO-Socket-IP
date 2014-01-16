@@ -1,5 +1,11 @@
 Revision history for IO-Socket-IP
 
+0.26    2014/01/16 12:20:02
+        [CHANGES]
+         * Set $VERSION in BEGIN block before 'use base' so that
+           Acme::Override::INET still works
+         * Various minor improvements to documentation
+
 0.25    2014/01/11 17:19:29
         [BUGFIXES]
          * Allow both *Host with port and *Port arguments, letting port from
