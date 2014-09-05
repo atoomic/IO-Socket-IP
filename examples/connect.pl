@@ -6,6 +6,11 @@ use warnings;
 use IO::Poll;
 use IO::Socket::IP;
 use Socket qw( SOCK_STREAM );
+use Getopt::Long;
+
+GetOptions(
+   'timeout=f' => \my $TIMEOUT,
+) or exit 1;
 
 my $host    = shift @ARGV or die "Need HOST\n";
 my $service = shift @ARGV or die "Need SERVICE\n";
@@ -14,6 +19,7 @@ my $socket = IO::Socket::IP->new(
    PeerHost    => $host,
    PeerService => $service,
    Type        => SOCK_STREAM,
+   Timeout     => $TIMEOUT,
 ) or die "Cannot connect to $host:$service - $@";
 
 printf STDERR "Connected to %s:%s\n", $socket->peerhost_service;

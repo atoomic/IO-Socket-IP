@@ -180,6 +180,18 @@ CONSTRUCTORS
             mode. Otherwise it will default to blocking mode. See the
             NON-BLOCKING section below for more detail.
 
+    Timeout => NUM
+            If defined, gives a timeout in seconds to wait per `connect()'
+            call. Note that if the hostname resolves to multiple address
+            candidates, the same timeout will apply to each connection
+            attempt individually, rather than to the operation as a whole.
+            Further note that the timeout does not apply to the initial
+            hostname resolve operation, if connecting by hostname.
+
+            This behviour is copied directly form `IO::Socket::INET'; for
+            more fine- grained control over connection timeouts, consider
+            performing a nonblocking connect directly.
+
     If neither `Type' nor `Proto' hints are provided, a default of
     `SOCK_STREAM' and `IPPROTO_TCP' respectively will be set, to maintain
     compatibility with `IO::Socket::INET'. Other named arguments that are

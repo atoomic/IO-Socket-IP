@@ -1,5 +1,9 @@
 Revision history for IO-Socket-IP
 
+0.31_001 2014/09/05 18:23:44
+        [CHANGES]
+         * Initial hack implementation of Timeout for ->connect (RT92075)
+
 0.31    2014/07/11 01:24:49
         [BUGFIXES]
          * A better fix for subclassing ->connect (RT95983) because 0.30 broke
