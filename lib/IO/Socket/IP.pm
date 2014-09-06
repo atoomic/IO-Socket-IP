@@ -7,7 +7,7 @@ package IO::Socket::IP;
 # $VERSION needs to be set before  use base 'IO::Socket'
 #  - https://rt.cpan.org/Ticket/Display.html?id=92107
 BEGIN {
-   $VERSION = '0.31_001';
+   $VERSION = '0.31_002';
 }
 
 use strict;
@@ -687,6 +687,8 @@ sub connect
 
       # Hoist the error by connect()ing a second time
       $err = defined CORE::connect( $self, $addr ) ? 0 : $!+0;
+      $err = 0 if $err == EISCONN; # Some OSes give EISCONN
+
       $self->blocking( $was_blocking );
 
       $! = $err, return undef if $err;
