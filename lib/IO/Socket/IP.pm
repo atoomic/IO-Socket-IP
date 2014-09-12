@@ -7,7 +7,7 @@ package IO::Socket::IP;
 # $VERSION needs to be set before  use base 'IO::Socket'
 #  - https://rt.cpan.org/Ticket/Display.html?id=92107
 BEGIN {
-   $VERSION = '0.31_002';
+   $VERSION = '0.32';
 }
 
 use strict;
@@ -306,15 +306,19 @@ detail.
 
 =item Timeout => NUM
 
-If defined, gives a timeout in seconds to wait per C<connect()> call. Note
-that if the hostname resolves to multiple address candidates, the same timeout
-will apply to each connection attempt individually, rather than to the
+If defined, gives a maximum time in seconds to block per C<connect()> call
+when in blocking mode. If missing, no timeout is applied other than that
+provided by the underlying operating system. When in non-blocking mode this
+parameter is ignored.
+
+Note that if the hostname resolves to multiple address candidates, the same
+timeout will apply to each connection attempt individually, rather than to the
 operation as a whole. Further note that the timeout does not apply to the
 initial hostname resolve operation, if connecting by hostname.
 
-This behviour is copied directly form C<IO::Socket::INET>; for more fine-
-grained control over connection timeouts, consider performing a nonblocking
-connect directly.
+This behviour is copied inspired by C<IO::Socket::INET>; for more fine grained
+control over connection timeouts, consider performing a nonblocking connect
+directly.
 
 =back
 
@@ -1141,6 +1145,37 @@ useable address from the results of the C<getaddrinfo(3)> call. The
 constructor will ignore the value of this argument, except if it is defined
 but false. An exception is thrown in this case, because that would request it
 disable the C<getaddrinfo(3)> search behaviour in the first place.
+
+=item *
+
+C<IO::Socket::IP> implements both the C<Blocking> and C<Timeout> parameters,
+but it implements the interaction of both in a different way.
+
+In C<::INET>, supplying a timeout overrides the non-blocking behaviour,
+meaning that the C<connect()> operation will still block despite that the
+caller asked for a non-blocking socket. This is not explicitly specified in
+its documentation, nor does this author believe that is a useful behaviour -
+it appears to come from a quirk of implementation.
+
+In C<::IP> therefore, the C<Blocking> parameter takes precedence - if a
+non-blocking socket is requested, no operation will block. The C<Timeout>
+parameter here simply defines the maximum time that a blocking C<connect()>
+call will wait, if it blocks at all.
+
+In order to specifically obtain the "blocking connect then non-blocking send
+and receive" behaviour of specifying this combination of options to C<::INET>
+when using C<::IP>, perform first a blocking connect, then afterwards turn the
+socket into nonblocking mode.
+
+ my $sock = IO::Socket::IP->new(
+    PeerHost => $peer,
+    Timeout => 20,
+ ) or die "Cannot connect - $@";
+
+ $sock->blocking( 0 );
+
+This code will behave identically under both C<IO::Socket::INET> and
+C<IO::Socket::IP>.
 
 =back
 
