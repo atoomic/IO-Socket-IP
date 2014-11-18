@@ -1,5 +1,11 @@
 Revision history for IO-Socket-IP
 
+0.32_001 2014/11/18 16:58:39
+        [BUGFIXES]
+         * Use SOL_SOCKET/SO_ERROR sockopt rather than 2nd connect() error
+           hoisting to detect nonblocking connect/failure when implementing
+           Timeout (RT98976) (thanks Arthur Axel 'fREW' Schmidt)
+
 0.32    2014/09/12 10:11:27
         [CHANGES]
          * Implementation of Timeout for ->connect (RT92075)
