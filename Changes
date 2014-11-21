@@ -1,6 +1,6 @@
 Revision history for IO-Socket-IP
 
-0.32_001 2014/11/18 16:58:39
+0.33    2014/11/21 16:17:39
         [BUGFIXES]
          * Use SOL_SOCKET/SO_ERROR sockopt rather than 2nd connect() error
            hoisting to detect nonblocking connect/failure when implementing
