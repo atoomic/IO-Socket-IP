@@ -1,5 +1,10 @@
 Revision history for IO-Socket-IP
 
+0.34    2014/12/03 00:04:56
+        [BUGFIXES]
+         * Don't select() for read-readiness when waiting for non-blocking
+           connect() because it upsets VMS (RT100654)
+
 0.33    2014/11/21 16:17:39
         [BUGFIXES]
          * Use SOL_SOCKET/SO_ERROR sockopt rather than 2nd connect() error
