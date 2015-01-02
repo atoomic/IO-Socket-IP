@@ -1,5 +1,13 @@
 Revision history for IO-Socket-IP
 
+0.35    2015/01/02 19:45:20
+        [BUGFIXES]
+         * Restore blocking mode after timeout connect immediate success
+           (RT100947)
+         * Avoid CORE:: prefixing so global override modules work (RT101174)
+         * Ensure that ->peer{host,port,hostname,service} never die even when
+           unconnected (RT98759)
+
 0.34    2014/12/03 00:04:56
         [BUGFIXES]
          * Don't select() for read-readiness when waiting for non-blocking
