@@ -1,5 +1,29 @@
 Revision history for IO-Socket-IP
 
+0.38    2016/08/02 18:33:50
+        [CHANGES]
+         * Support setting custom socket options with new 'Sockopts'
+           constructor parameter
+
+        [BUGFIXES]
+         * Restore blocking mode after ->connect errors (RT112334)
+
+0.37    2015/03/12 20:44:07
+        [CHANGES]
+         * Earlier detection/reporting of erroneous Listen + Peer* argument
+           combination; don't rely on resolveable hostname to do it (RT92930)
+
+        [BUGFIXES]
+         * Skip t/16v6only.t on irix (RT102662)
+         * Remember to eval() $IO::Socket::VERSION in case it's a devel
+           release (RT101954)
+         * s/Port/LocalPort/ in unit tests (RT96064)
+
+0.36    2014/01/10 20:54:58
+        [BUGFIXES]
+         * Always bind() on MSWin32 because Windows doesn't like it if we
+           listen() having not done so (RT101396)
+
 0.35    2015/01/02 19:45:20
         [BUGFIXES]
          * Restore blocking mode after timeout connect immediate success

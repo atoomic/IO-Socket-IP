@@ -7,7 +7,7 @@ package IO::Socket::IP;
 # $VERSION needs to be set before  use base 'IO::Socket'
 #  - https://rt.cpan.org/Ticket/Display.html?id=92107
 BEGIN {
-   $VERSION = '0.35';
+   $VERSION = '0.38';
 }
 
 use strict;
@@ -265,6 +265,22 @@ If true, set the C<SO_REUSEPORT> sockopt (not all OSes implement this sockopt)
 
 If true, set the C<SO_BROADCAST> sockopt
 
+=item Sockopts => ARRAY
+
+An optional array of other socket options to apply after the three listed
+above. The value is an ARRAY containing 2- or 3-element ARRAYrefs. Each inner
+array relates to a single option, giving the level and option name, and an
+optional value. If the value element is missing, it will be given the value of
+a platform-sized integer 1 constant (i.e. suitable to enable most of the
+common boolean options).
+
+For example, both options given below are equivalent to setting C<ReuseAddr>.
+
+ Sockopts => [
+    [ SOL_SOCKET, SO_REUSEADDR ],
+    [ SOL_SOCKET, SO_REUSEADDR, pack( "i", 1 ) ],
+ ]
+
 =item V6Only => BOOL
 
 If defined, set the C<IPV6_V6ONLY> sockopt when creating C<PF_INET6> sockets
@@ -396,6 +412,12 @@ sub _io_socket_ip__configure
    my @localinfos;
    my @peerinfos;
 
+   my $listenqueue = $arg->{Listen};
+   if( defined $listenqueue and
+       ( defined $arg->{PeerHost} || defined $arg->{PeerService} || defined $arg->{PeerAddrInfo} ) ) {
+      croak "Cannot Listen with a peer address";
+   }
+
    if( defined $arg->{GetAddrInfoFlags} ) {
       $hints{flags} = $arg->{GetAddrInfoFlags};
    }
@@ -441,10 +463,16 @@ sub _io_socket_ip__configure
       ref $info eq "ARRAY" or croak "Expected 'LocalAddrInfo' to be an ARRAY ref";
       @localinfos = @$info;
    }
-   elsif( defined $arg->{LocalHost} or defined $arg->{LocalService} ) {
+   elsif( defined $arg->{LocalHost} or
+          defined $arg->{LocalService} or
+          HAVE_MSWIN32 and $arg->{Listen} ) {
       # Either may be undef
       my $host = $arg->{LocalHost};
       my $service = $arg->{LocalService};
+
+      unless ( defined $host or defined $service ) {
+         $service = 0;
+      }
 
       local $1; # Placate a taint-related bug; [perl #67962]
       defined $service and $service =~ s/\((\d+)\)$// and
@@ -492,14 +520,27 @@ sub _io_socket_ip__configure
       }
    }
 
+   my $INT_1 = pack "i", 1;
+
    my @sockopts_enabled;
-   push @sockopts_enabled, SO_REUSEADDR if $arg->{ReuseAddr};
-   push @sockopts_enabled, SO_REUSEPORT if $arg->{ReusePort};
-   push @sockopts_enabled, SO_BROADCAST if $arg->{Broadcast};
+   push @sockopts_enabled, [ SOL_SOCKET, SO_REUSEADDR, $INT_1 ] if $arg->{ReuseAddr};
+   push @sockopts_enabled, [ SOL_SOCKET, SO_REUSEPORT, $INT_1 ] if $arg->{ReusePort};
+   push @sockopts_enabled, [ SOL_SOCKET, SO_BROADCAST, $INT_1 ] if $arg->{Broadcast};
 
-   my $listenqueue = $arg->{Listen};
+   if( my $sockopts = $arg->{Sockopts} ) {
+      ref $sockopts eq "ARRAY" or croak "Expected 'Sockopts' to be an ARRAY ref";
+      foreach ( @$sockopts ) {
+         ref $_ eq "ARRAY" or croak "Bad Sockopts item - expected ARRAYref";
+         @$_ >= 2 and @$_ <= 3 or
+            croak "Bad Sockopts item - expected 2 or 3 elements";
 
-   croak "Cannot Listen with a PeerHost" if defined $listenqueue and @peerinfos;
+         my ( $level, $optname, $value ) = @$_;
+         # TODO: consider more sanity checking on argument values
+
+         defined $value or $value = $INT_1;
+         push @sockopts_enabled, [ $level, $optname, $value ];
+      }
+   }
 
    my $blocking = $arg->{Blocking};
    defined $blocking or $blocking = 1;
@@ -599,7 +640,8 @@ sub setup
       $self->blocking( 0 ) unless ${*$self}{io_socket_ip_blocking};
 
       foreach my $sockopt ( @{ ${*$self}{io_socket_ip_sockopts} } ) {
-         $self->setsockopt( SOL_SOCKET, $sockopt, pack "i", 1 ) or ( $@ = "$!", return undef );
+         my ( $level, $optname, $value ) = @$sockopt;
+         $self->setsockopt( $level, $optname, $value ) or ( $@ = "$!", return undef );
       }
 
       if( defined ${*$self}{io_socket_ip_v6only} and defined $AF_INET6 and $info->{family} == $AF_INET6 ) {
@@ -622,7 +664,7 @@ sub setup
             return 1;
          }
 
-         if( $! == EINPROGRESS or HAVE_MSWIN32 && $! == Errno::EWOULDBLOCK() ) {
+         if( $! == EINPROGRESS or $! == EWOULDBLOCK ) {
             ${*$self}{io_socket_ip_connect_in_progress} = 1;
             return 0;
          }
@@ -677,6 +719,7 @@ sub connect :method
       }
       elsif( not( $err == EINPROGRESS or $err == EWOULDBLOCK ) ) {
          # Failed for some other reason
+         $self->blocking( $was_blocking );
          return undef;
       }
       elsif( !$was_blocking ) {
@@ -686,6 +729,7 @@ sub connect :method
 
       my $vec = ''; vec( $vec, $self->fileno, 1 ) = 1;
       if( !select( undef, $vec, $vec, $timeout ) ) {
+         $self->blocking( $was_blocking );
          $! = ETIMEDOUT;
          return undef;
       }
@@ -814,11 +858,11 @@ Return the resolved name of the local port number
 
 =cut
 
-sub sockhost { my $self = shift; ( $self->_get_host_service( $self->sockname, NI_NUMERICHOST, NIx_NOSERV ) )[0] }
-sub sockport { my $self = shift; ( $self->_get_host_service( $self->sockname, NI_NUMERICSERV, NIx_NOHOST ) )[1] }
+sub sockhost { my $self = shift; scalar +( $self->_get_host_service( $self->sockname, NI_NUMERICHOST, NIx_NOSERV ) )[0] }
+sub sockport { my $self = shift; scalar +( $self->_get_host_service( $self->sockname, NI_NUMERICSERV, NIx_NOHOST ) )[1] }
 
-sub sockhostname { my $self = shift; ( $self->_get_host_service( $self->sockname, 0, NIx_NOSERV ) )[0] }
-sub sockservice  { my $self = shift; ( $self->_get_host_service( $self->sockname, 0, NIx_NOHOST ) )[1] }
+sub sockhostname { my $self = shift; scalar +( $self->_get_host_service( $self->sockname, 0, NIx_NOSERV ) )[0] }
+sub sockservice  { my $self = shift; scalar +( $self->_get_host_service( $self->sockname, 0, NIx_NOHOST ) )[1] }
 
 =head2 $addr = $sock->sockaddr
 
@@ -867,11 +911,11 @@ Return the resolved name of the peer port number
 
 =cut
 
-sub peerhost { my $self = shift; ( $self->_get_host_service( $self->peername, NI_NUMERICHOST, NIx_NOSERV ) )[0] }
-sub peerport { my $self = shift; ( $self->_get_host_service( $self->peername, NI_NUMERICSERV, NIx_NOHOST ) )[1] }
+sub peerhost { my $self = shift; scalar +( $self->_get_host_service( $self->peername, NI_NUMERICHOST, NIx_NOSERV ) )[0] }
+sub peerport { my $self = shift; scalar +( $self->_get_host_service( $self->peername, NI_NUMERICSERV, NIx_NOHOST ) )[1] }
 
-sub peerhostname { my $self = shift; ( $self->_get_host_service( $self->peername, 0, NIx_NOSERV ) )[0] }
-sub peerservice  { my $self = shift; ( $self->_get_host_service( $self->peername, 0, NIx_NOHOST ) )[1] }
+sub peerhostname { my $self = shift; scalar +( $self->_get_host_service( $self->peername, 0, NIx_NOSERV ) )[0] }
+sub peerservice  { my $self = shift; scalar +( $self->_get_host_service( $self->peername, 0, NIx_NOHOST ) )[1] }
 
 =head2 $addr = $peer->peeraddr
 
@@ -911,7 +955,7 @@ sub socket :method
 # Versions of IO::Socket before 1.35 may leave socktype undef if from, say, an
 #   ->fdopen call. In this case we'll apply a fix
 BEGIN {
-   if( $IO::Socket::VERSION < 1.35 ) {
+   if( eval($IO::Socket::VERSION) < 1.35 ) {
       *socktype = sub {
          my $self = shift;
          my $type = $self->SUPER::socktype;
