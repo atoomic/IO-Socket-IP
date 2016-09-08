@@ -14,8 +14,6 @@ use strict;
 use warnings;
 use base qw( IO::Socket );
 
-use Carp;
-
 use Socket 1.97 qw(
    getaddrinfo getnameinfo
    sockaddr_family
@@ -955,7 +953,9 @@ sub socket :method
 # Versions of IO::Socket before 1.35 may leave socktype undef if from, say, an
 #   ->fdopen call. In this case we'll apply a fix
 BEGIN {
-   if( eval($IO::Socket::VERSION) < 1.35 ) {
+    sub croak($) { require Carp; Carp::croak(@_) }
+
+    if( eval($IO::Socket::VERSION) < 1.35 ) {
       *socktype = sub {
          my $self = shift;
          my $type = $self->SUPER::socktype;
